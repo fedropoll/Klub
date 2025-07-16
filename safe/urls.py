@@ -1,11 +1,15 @@
 from django.contrib import admin
-from django.urls import path, include
-from rest_framework import permissions
+from django.urls import path
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from rest_framework import permissions
 
-from main.views import RegisterAPIView  # <-- твой контроллер регистрации
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from main.views import (
+    RegisterAPIView,
+    ClientRegisterAPIView,
+    VerifyEmailAPIView
+)
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -19,9 +23,15 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # Сотрудники
     path('register/', RegisterAPIView.as_view(), name='register'),
 
-    # JWT токены
+    # Клиенты
+    path('register/client/', ClientRegisterAPIView.as_view(), name='register-client'),
+    path('verify-email/', VerifyEmailAPIView.as_view(), name='verify-email'),
+
+    # JWT
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
