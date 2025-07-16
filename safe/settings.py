@@ -69,6 +69,11 @@ TEMPLATES = [
         },
     },
 ]
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
 
 WSGI_APPLICATION = 'safe.wsgi.application'
 
@@ -125,3 +130,11 @@ STATIC_URL = 'static/'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # токен доступа 60 минут
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),     # рефреш токен 7 дней
+    'ROTATE_REFRESH_TOKENS': False,                  # без ротации
+    'BLACKLIST_AFTER_ROTATION': False,               # без блэклиста
+}
