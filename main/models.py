@@ -1,11 +1,24 @@
+# main/models.py
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, UserManager as BaseUserManager # Импортируем UserManager как BaseUserManager
 
+# --- Custom Managers for User Roles ---
+class ClientManager(BaseUserManager):
+    def get_queryset(self):
+        # Возвращает только пользователей, чья роль в UserProfile - 'patient'
+        return super().get_queryset().filter(userprofile__role='patient')
+
+class StaffManager(BaseUserManager):
+    def get_queryset(self):
+        # Возвращает только пользователей, чья роль в UserProfile НЕ 'patient'
+        return super().get_queryset().exclude(userprofile__role='patient')
+
+# --- Existing Models ---
 class UserProfile(models.Model):
     ROLE_CHOICES = [
         ('admin', 'Администратор'),
         ('doctor', 'Врач'),
-        ('patient', 'Пациент'),
+        ('patient', 'Пациент'), # Роль для клиентов
         ('director', 'Директор'),
         ('dentist', 'Стоматолог'),
         ('radiologist', 'Рентгенолог'),
@@ -29,3 +42,5 @@ class ClientProfile(models.Model):
 
     def __str__(self):
         return self.full_name
+
+# Модель Branch остается в list_doctor/models.py

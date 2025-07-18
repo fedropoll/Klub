@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'main',
     'rest_framework',
     'drf_yasg',
+    'list_doctor',
+
 ]
 
 MIDDLEWARE = [
