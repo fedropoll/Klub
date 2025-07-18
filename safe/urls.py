@@ -4,6 +4,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
+from main.admin import my_admin_site # <--- Убедитесь, что эта строка присутствует
 
 from main.views import (
     RegisterAPIView,
@@ -27,10 +28,11 @@ schema_view = get_schema_view(
     public=True,
     permission_classes=[permissions.AllowAny],
 )
+from main.admin import my_admin_site # <--- Убедитесь, что эта строка присутствует
 
 urlpatterns = [
     # Возвращаем стандартный admin.site.urls
-    path('admin/', admin.site.urls),
+    path('admin/', my_admin_site.urls),
 
     # Сотрудники (Регистрация сотрудников)
     path('api/register/', RegisterAPIView.as_view(), name='register-staff'),
