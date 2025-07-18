@@ -85,3 +85,34 @@ class ClientRegisterSerializer(serializers.Serializer):
 class VerifyEmailSerializer(serializers.Serializer):
     email = serializers.EmailField()
     code = serializers.CharField(max_length=6)
+
+    def validate(self, data):
+        email = data.get('email')
+        code = data.get('code')
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("Пользователь с таким email не найден.")
+
+        try:
+            profile = ClientProfile.objects.get(user=user)
+        except ClientProfile.DoesNotExist:
+            raise serializers.ValidationError("Профиль клиента не найден.")
+
+        if profile.confirmation_code != code:
+            raise serializers.ValidationError("Неверный код подтверждения.")
+
+        return data
+
+    def save(self, **kwargs):
+        email = self.validated_data['email']
+        user = User.objects.get(email=email)
+        user.is_active = True
+        user.save()
+
+        profile = ClientProfile.objects.get(user=user)
+        profile.confirmation_code = ''
+        profile.save()
+
+        return user
