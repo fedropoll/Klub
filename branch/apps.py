@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
-
-class ListDoctorConfig(AppConfig):
+class BranchConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'list_doctor'
+    name = 'branch'
+    verbose_name = 'Филиалы'

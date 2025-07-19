@@ -1,24 +1,31 @@
-# main/serializers.py
-from rest_framework import serializers
-from django.contrib.auth.models import User
-from django.contrib.auth.password_validation import validate_password
-from .models import UserProfile, ClientProfile # Branch удален
-from django.utils import timezone
-from datetime import timedelta
-import random
-from django.core.mail import send_mail
-from django.conf import settings
+# /home/asylbek/Desktop/klub/safe/main/serializers.py
 
-# 👉 Для сотрудников
+import random
+from datetime import timedelta
+
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
+from django.core.mail import send_mail
+from django.utils import timezone
+from rest_framework import serializers
+
+from .models import UserProfile, ClientProfile, Branch
+
+User = get_user_model()
+
+
 class RegisterSerializer(serializers.ModelSerializer):
     role = serializers.ChoiceField(choices=UserProfile.ROLE_CHOICES, write_only=True)
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
 
     class Meta:
         model = User
-        fields = ['email', 'password', 'role']
+        fields = ['email', 'password', 'role', 'first_name', 'last_name']
         extra_kwargs = {
-            'email': {'required': True}
+            'email': {'required': True},
         }
 
     def validate_email(self, value):
@@ -30,23 +37,26 @@ class RegisterSerializer(serializers.ModelSerializer):
         role = validated_data.pop('role')
         password = validated_data.pop('password')
         email = validated_data['email']
+        first_name = validated_data.get('first_name')
+        last_name = validated_data.get('last_name')
 
         user = User.objects.create_user(
-            username=email, # Используем email как username
+            username=email,
             email=email,
             password=password,
-            is_active=True # Сотрудники активны сразу
+            first_name=first_name,
+            last_name=last_name,
+            is_active=True
         )
         UserProfile.objects.create(user=user, role=role)
         return user
 
 
-# 👉 Для клиентов: Регистрация и запрос нового кода
 class ClientRegisterSerializer(serializers.Serializer):
-    full_name = serializers.CharField(max_length=150)
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
-    password2 = serializers.CharField(write_only=True)
+    full_name = serializers.CharField(max_length=150, required=True)
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(write_only=True, required=True)
+    password2 = serializers.CharField(write_only=True, required=True)
 
     def validate_email(self, value):
         if User.objects.filter(email=value, is_active=True).exists():
@@ -97,9 +107,9 @@ class ClientRegisterSerializer(serializers.Serializer):
 
         return user
 
-# Сериализатор для запроса нового кода (отдельный эндпоинт)
+
 class ResendVerifyCodeSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    email = serializers.EmailField(required=True)
 
     def validate_email(self, value):
         try:
@@ -131,10 +141,9 @@ class ResendVerifyCodeSerializer(serializers.Serializer):
         return user
 
 
-# Сериализатор для подтверждения email
 class VerifyEmailSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    code = serializers.CharField(max_length=6)
+    email = serializers.EmailField(required=True)
+    code = serializers.CharField(max_length=6, required=True)
 
     def validate(self, data):
         email = data.get('email')
@@ -174,3 +183,38 @@ class VerifyEmailSerializer(serializers.Serializer):
 
         return user
 
+
+class BranchSerializer(serializers.ModelSerializer):
+    director_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        source='director',
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
+    director = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = Branch
+        fields = ['id', 'name', 'address', 'phone_number', 'email', 'is_active', 'director', 'director_id', 'photo']
+        read_only_fields = ['id', 'director']
+
+
+
+from rest_framework import serializers
+from .models import Branch, User
+
+
+class BranchSerializer(serializers.ModelSerializer):
+    # director_id - для удобства создания/обновления
+    director_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), source='director', write_only=True, required=False
+    )
+    # director_name - для отображения имени директора
+    director = serializers.CharField(source='director.username', read_only=True)
+
+    class Meta:
+        model = Branch
+        fields = ['id', 'name', 'address', 'phone_number', 'email', 'is_active', 'director', 'director_id', 'photo']
+        read_only_fields = ['id', 'director']
+        ref_name = 'Branch'

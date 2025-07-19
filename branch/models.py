@@ -1,6 +1,5 @@
-# list_doctor/models.py
 from django.db import models
-from django.contrib.auth.models import User # Важно импортировать User
+from django.contrib.auth.models import User
 
 class Branch(models.Model):
     name = models.CharField(max_length=100, verbose_name="Название филиала")

@@ -1,21 +1,24 @@
+# /home/asylbek/Desktop/klub/safe/main/views.py
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework import viewsets
 
 from drf_yasg.utils import swagger_auto_schema
 from django.contrib.auth.models import User
-from .models import ClientProfile
+from .models import ClientProfile, UserProfile, Branch
 
 from .serializers import (
     RegisterSerializer,
     ClientRegisterSerializer,
     VerifyEmailSerializer,
     ResendVerifyCodeSerializer,
+    BranchSerializer,
 )
 
-# 👉 Сотрудники
 class RegisterAPIView(APIView):
     permission_classes = [AllowAny]
     @swagger_auto_schema(
@@ -31,7 +34,6 @@ class RegisterAPIView(APIView):
             return Response({'message': 'Сотрудник зарегистрирован. Аккаунт активен.'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# 👉 Клиенты
 class ClientRegisterAPIView(APIView):
     permission_classes = [AllowAny]
     @swagger_auto_schema(
@@ -77,4 +79,14 @@ class ResendVerifyCodeAPIView(APIView):
             return Response({'message': 'Новый код подтверждения отправлен на вашу почту.'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# Представления для филиалов остаются в list_doctor/views.py
+class BranchViewSet(viewsets.ModelViewSet):
+    queryset = Branch.objects.all()
+    serializer_class = BranchSerializer
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="Управление филиалами",
+        operation_description="Позволяет создавать, просматривать, обновлять и удалять данные о филиалах. Требует авторизации."
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)

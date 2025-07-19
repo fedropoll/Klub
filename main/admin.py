@@ -1,28 +1,59 @@
-# main/admin.py
+# /home/asylbek/Desktop/klub/safe/main/admin.py
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
-# ... другие импорты ...
 
-try:
-    admin.site.unregister(User)
-except admin.sites.NotRegistered:
-    pass
+from .models import UserProfile, ClientProfile, Branch
 
-class MyAdminSite(admin.AdminSite):
-    site_header = "Панель Управления Клиникой Safe"
-    site_title = "Админ Клиники Safe"
-    index_title = "Добро пожаловать в панель управления"
+admin.site.unregister(User)
 
-# Создаем экземпляр нашего кастомного сайта
-my_admin_site = MyAdminSite(name='myadmin')
+@admin.register(User)
+class CustomUserAdmin(BaseUserAdmin):
+    list_display = (
+        'username',
+        'email',
+        'get_full_name', # Метод для получения полного имени
+        'get_role',
+        'is_active',
+        'is_staff',
+        'date_joined',
+    )
+    search_fields = ('username', 'email', 'first_name', 'last_name')
+    list_filter = ('is_active', 'is_staff', 'is_superuser', 'userprofile__role')
 
-# --- Регистрируем ВСЕ МОДЕЛИ на кастомном сайте ---
-my_admin_site.register(User, StaffUserAdmin)
-my_admin_site.register(User, ClientUserAdmin)
-# ... другие регистрации моделей ...
+    def get_role(self, obj):
+        try:
+            return obj.userprofile.get_role_display()
+        except UserProfile.DoesNotExist:
+            return "Нет роли"
+    get_role.short_description = 'Роль'
 
-# Импортируем Branch и BranchAdmin и регистрируем ИХ ЗДЕСЬ
-from list_doctor.models import Branch
-from list_doctor.admin import BranchAdmin
+    # ДОБАВЬТЕ ЭТОТ МЕТОД, чтобы переименовать столбец 'Get full name'
+    def get_full_name(self, obj):
+        return obj.get_full_name() # Вызываем оригинальный метод User.get_full_name
+    get_full_name.short_description = 'Полное имя' # Название столбца
 
-my_admin_site.register(Branch, BranchAdmin) # <--- Регистрация происходит только здесь
+    fieldsets = (
+        (None, {'fields': ('username', 'password')}),
+        ('Персональная информация', {'fields': ('first_name', 'last_name', 'email')}),
+        ('Разрешения', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        ('Важные даты', {'fields': ('last_login', 'date_joined')}),
+    )
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'role')
+    search_fields = ('user__username', 'role')
+    list_filter = ('role',)
+
+@admin.register(ClientProfile)
+class ClientProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'full_name', 'is_email_verified')
+    search_fields = ('user__username', 'full_name')
+
+@admin.register(Branch)
+class BranchAdmin(admin.ModelAdmin):
+    list_display = ('name', 'address', 'director', 'is_active', 'phone_number', 'email')
+    search_fields = ('name', 'address', 'director__username')
+    list_filter = ('is_active',)
+
