@@ -1,15 +1,15 @@
-# /home/asylbek/Desktop/klub/safe/branch/views.py
-
-from rest_framework import viewsets, permissions
-from .models import Branch
-from .serializers import BranchSerializer
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
+from main.permissions import IsAdminOrDirector
+from .models import Branch, Service
+from .serializers import BranchSerializer, ServiceSerializer
 
 class BranchViewSet(viewsets.ModelViewSet):
     queryset = Branch.objects.all()
     serializer_class = BranchSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly, permissions.IsAdminUser]
+    permission_classes = [IsAuthenticated, IsAdminOrDirector]
 
-    def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [permissions.IsAdminUser()]
-        return [permissions.IsAuthenticatedOrReadOnly()]
+class ServiceViewSet(viewsets.ModelViewSet):
+    queryset = Service.objects.all()
+    serializer_class = ServiceSerializer
+    permission_classes = [IsAuthenticated, IsAdminOrDirector]
