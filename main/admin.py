@@ -12,7 +12,7 @@ class CustomUserAdmin(BaseUserAdmin):
     list_display = (
         'username',
         'email',
-        'get_full_name', # Метод для получения полного имени
+        'get_full_name',
         'get_role',
         'is_active',
         'is_staff',
