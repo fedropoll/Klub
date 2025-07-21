@@ -1,5 +1,5 @@
 from django.db import models
-from branch.models import Branch
+from safe.branch.models import Branch
 
 class Service(models.Model):
     name = models.CharField(max_length=100, verbose_name="Название услуги")
