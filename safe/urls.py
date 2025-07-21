@@ -1,11 +1,14 @@
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+# Swagger / drf-yasg
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
-from main.admin import my_admin_site # <--- Убедитесь, что эта строка присутствует
 
+# Импорты ваших views
+from main.admin import my_admin_site
 from main.views import (
     RegisterAPIView,
     ClientRegisterAPIView,
@@ -13,9 +16,7 @@ from main.views import (
     ResendVerifyCodeAPIView,
 )
 
-# УДАЛЯЕМ импорт нашего кастомного AdminSite
-# from main.admin import my_admin_site
-
+# Swagger schema
 schema_view = get_schema_view(
     openapi.Info(
         title="Safe Clinic API",
@@ -28,28 +29,25 @@ schema_view = get_schema_view(
     public=True,
     permission_classes=[permissions.AllowAny],
 )
-from main.admin import my_admin_site # <--- Убедитесь, что эта строка присутствует
 
+# URL-шки
 urlpatterns = [
-    # Возвращаем стандартный admin.site.urls
     path('admin/', my_admin_site.urls),
 
-    # Сотрудники (Регистрация сотрудников)
+    # Регистрация
     path('api/register/', RegisterAPIView.as_view(), name='register-staff'),
-
-    # Клиенты (Регистрация клиентов и подтверждение email)
     path('api/register/client/', ClientRegisterAPIView.as_view(), name='register-client'),
     path('api/verify-email/', VerifyEmailAPIView.as_view(), name='verify-email'),
     path('api/resend-verify-code/', ResendVerifyCodeAPIView.as_view(), name='resend-verify-code'),
 
-    # JWT Аутентификация
+    # JWT
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
-    # API для управления филиалами (перемещено в list_doctor)
-    path('api/list_doctor/', include('list_doctor.urls')),
-
-    # Swagger и Redoc документация
+    # Доктора
+    path('api/list_doctor/', include('listdoctors.urls')),
+    path('api/list_patients', include('listpatients.urls')),
+    # Swagger и ReDoc
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]

@@ -76,5 +76,3 @@ class ResendVerifyCodeAPIView(APIView):
             serializer.save()
             return Response({'message': 'Новый код подтверждения отправлен на вашу почту.'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# Представления для филиалов остаются в list_doctor/views.py
