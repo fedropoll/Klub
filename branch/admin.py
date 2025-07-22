@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import Branch
-from safe.services.models import Service
+from services.models import Service
 
 
 @admin.register(Branch)

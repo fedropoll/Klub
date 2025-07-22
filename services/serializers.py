@@ -5,6 +5,9 @@ class ServiceSerializer(serializers.ModelSerializer):
     branch_name = serializers.CharField(source='branch.name', read_only=True)
     photo_url = serializers.ImageField(source='photo', read_only=True)
 
+    created_at = serializers.DateTimeField(read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
+
     class Meta:
         model = Service
         fields = [
@@ -25,6 +28,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
+        # Убираем возможные попытки изменить даты
         attrs.pop('created_at', None)
         attrs.pop('updated_at', None)
         return attrs
