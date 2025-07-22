@@ -77,6 +77,7 @@ class ResendVerifyCodeAPIView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response({'message': 'Новый код подтверждения отправлен на вашу почту.'}, status=status.HTTP_200_OK)
+<<<<<<< HEAD
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class BranchViewSet(viewsets.ModelViewSet):
@@ -90,3 +91,6 @@ class BranchViewSet(viewsets.ModelViewSet):
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
+=======
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+>>>>>>> aziret
