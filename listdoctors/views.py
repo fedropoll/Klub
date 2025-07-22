@@ -15,27 +15,28 @@ class DoctorViewSet(viewsets.ModelViewSet):
     def search_doctors(self, request):
         queryset = self.queryset
 
-        # Роль (тег)
+        # Фильтр по тегу (роли)
         tags = request.query_params.get('tags')
         if tags:
             queryset = queryset.filter(tags=tags)
 
-        # Пол
+        # Фильтр по полу
         gender = request.query_params.get('gender')
         if gender:
             queryset = queryset.filter(gender=gender)
 
-        # Возрастной диапазон
+        # Фильтр по возрастному диапазону
         age_range = request.query_params.get('age_range')
         if age_range:
             try:
+                # Пример: 30-40
                 min_age, max_age = map(int, age_range.split('-'))
                 today = date.today()
                 max_birthdate = date(today.year - min_age, today.month, today.day)
                 min_birthdate = date(today.year - max_age - 1, today.month, today.day)
                 queryset = queryset.filter(birth_date__range=(min_birthdate, max_birthdate))
-            except:
-                pass  # просто игнорим, если криво введено
+            except ValueError:
+                return Response({"error": "Возрастной диапазон должен быть в формате '30-40'"}, status=400)
 
         serializer = DoctorSerializer(queryset, many=True)
         return Response(serializer.data)
