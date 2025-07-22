@@ -1,9 +1,6 @@
-# /home/asylbek/Desktop/klub/safe/main/views.py
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import viewsets
 
@@ -19,8 +16,10 @@ from .serializers import (
     BranchSerializer,
 )
 
+
 class RegisterAPIView(APIView):
     permission_classes = [AllowAny]
+
     @swagger_auto_schema(
         operation_summary="Регистрация нового сотрудника",
         operation_description="Регистрирует нового пользователя с определенной ролью (например, admin, doctor, director) и немедленно активирует его аккаунт.",
@@ -34,8 +33,10 @@ class RegisterAPIView(APIView):
             return Response({'message': 'Сотрудник зарегистрирован. Аккаунт активен.'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class ClientRegisterAPIView(APIView):
     permission_classes = [AllowAny]
+
     @swagger_auto_schema(
         operation_summary="Регистрация нового клиента",
         operation_description="Регистрирует нового клиента и отправляет уникальный код подтверждения на указанный email. Аккаунт клиента будет неактивным до подтверждения email. Используется для регистрации пользователей, не являющихся сотрудниками.",
@@ -49,8 +50,10 @@ class ClientRegisterAPIView(APIView):
             return Response({'message': 'Код подтверждения отправлен на почту. Пожалуйста, подтвердите ваш email.'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class VerifyEmailAPIView(APIView):
     permission_classes = [AllowAny]
+
     @swagger_auto_schema(
         operation_summary="Подтверждение email клиента",
         operation_description="Активирует аккаунт клиента с помощью кода подтверждения, полученного по email. Код действителен в течение 5 минут.",
@@ -64,8 +67,10 @@ class VerifyEmailAPIView(APIView):
             return Response({'message': 'Email успешно подтвержден. Ваш аккаунт активен.'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class ResendVerifyCodeAPIView(APIView):
     permission_classes = [AllowAny]
+
     @swagger_auto_schema(
         operation_summary="Запрос нового кода подтверждения email",
         operation_description="Отправляет новый код подтверждения на email клиента, если предыдущий код истек или был утерян. Только для неподтвержденных клиентов.",
@@ -77,8 +82,8 @@ class ResendVerifyCodeAPIView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response({'message': 'Новый код подтверждения отправлен на вашу почту.'}, status=status.HTTP_200_OK)
-<<<<<<< HEAD
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class BranchViewSet(viewsets.ModelViewSet):
     queryset = Branch.objects.all()
@@ -91,6 +96,3 @@ class BranchViewSet(viewsets.ModelViewSet):
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
-=======
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
->>>>>>> aziret

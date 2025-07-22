@@ -1,5 +1,6 @@
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from datetime import date
@@ -10,7 +11,7 @@ class DoctorViewSet(viewsets.ModelViewSet):
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
     parser_classes = [MultiPartParser, FormParser]
-
+    permission_classes = [AllowAny]
     @action(detail=False, methods=['get'], url_path='search')
     def search_doctors(self, request):
         queryset = self.queryset
