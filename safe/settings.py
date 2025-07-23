@@ -11,9 +11,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-default-key")
 
-DEBUG= True
+DEBUG= False
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'klub-main.onrender.com']
+ALLOWED_HOSTS = ['klub-main.onrender.com']
 
 INSTALLED_APPS = [
     "jazzmin",

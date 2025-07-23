@@ -43,8 +43,8 @@ from django.views import View
 
 urlpatterns = [
     path('admin/', my_admin_site.urls),
-    path('', lambda request: redirect('swagger')),
     path('welcome/', lambda request: HttpResponse("Добро пожаловать в API клиники Safe!")),
+    path('', lambda request: redirect('/swagger/')),
 
     # path('accounts/login/', NoLoginView.as_view(), name='login'),
 
