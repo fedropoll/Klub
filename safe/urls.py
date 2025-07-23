@@ -38,6 +38,7 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('admin/', my_admin_site.urls),
 
+    path('', lambda request: redirect('schema-swagger-ui')),
     path('', lambda request: HttpResponse("Добро пожаловать в API клиники Safe!")),
     # Регистрация и подтверждение email
     path('api/register/', RegisterAPIView.as_view(), name='register-staff'),
