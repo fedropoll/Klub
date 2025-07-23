@@ -3,6 +3,7 @@ from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 import dj_database_url
+from urllib.parse import quote
 
 load_dotenv()  # загружаем .env
 
@@ -65,9 +66,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "safe.wsgi.application"
 
+# Кодируем переменные для безопасности URL
+db_user = quote(os.getenv('DB_USER', ''))
+db_password = quote(os.getenv('DB_PASSWORD', ''))
+db_host = os.getenv('DB_HOST', '')
+db_port = os.getenv('DB_PORT', '')
+db_name = os.getenv('DB_NAME', '')
+
+DATABASE_URL = f"postgres://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+
 DATABASES = {
     "default": dj_database_url.config(
-        default=f"postgres://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}",
+        default=DATABASE_URL,
         conn_max_age=600,
         ssl_require=False,
     )
