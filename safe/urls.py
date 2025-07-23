@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.http import HttpResponse
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
@@ -37,6 +38,7 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('admin/', my_admin_site.urls),
 
+    path('', lambda request: HttpResponse("Добро пожаловать в API клиники Safe!")),
     # Регистрация и подтверждение email
     path('api/register/', RegisterAPIView.as_view(), name='register-staff'),
     path('api/register/client/', ClientRegisterAPIView.as_view(), name='register-client'),
