@@ -27,7 +27,7 @@ schema_view = get_schema_view(
         default_version='v1',
         description="Документация по API.",
         terms_of_service="http://www.google.com/policies/terms/",
-        contact=openapi.Contact(email="contact@safe.Clinic.com"),
+        contact=openapi.Contact(email="contact@safeClinic.com"),
         license=openapi.License(name="BSD License"),
     ),
     public=True,

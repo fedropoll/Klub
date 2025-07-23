@@ -46,7 +46,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "safe.Clinic.urls"
+ROOT_URLCONF = "safeClinic.urls"
 
 TEMPLATES = [
     {
@@ -63,7 +63,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "safe.Clinic.wsgi.application"
+WSGI_APPLICATION = "safeClinic.wsgi.application"
 
 DATABASES = {
     "default": dj_database_url.config(
