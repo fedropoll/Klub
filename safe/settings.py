@@ -13,7 +13,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-default-key")
 
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'klub-main.onrender.com']
 
 INSTALLED_APPS = [
     "jazzmin",
