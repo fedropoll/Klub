@@ -4,7 +4,6 @@ from pathlib import Path
 import dj_database_url
 from dotenv import load_dotenv
 
-# Загрузка переменных окружения
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -12,12 +11,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = ['klub-main.onrender.com', 'localhost', '127.0.0.1']
-
-# Настройки базы данных (оптимизированная версия)
+# Настройки базы данных
 DATABASE_URL = os.getenv('DATABASE_URL')
 
 if not DATABASE_URL:
-    print("⚠️ DATABASE_URL not found! Falling back to SQLite")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -25,8 +22,8 @@ if not DATABASE_URL:
         }
     }
 else:
-    # Нормализация URL (поддержка старого формата postgres://)
-    if DATABASE_URL.startswith('postgres://'):
+    # Автоматическая коррекция URL
+    if 'postgres://' in DATABASE_URL:
         DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
 
     try:
@@ -42,17 +39,15 @@ else:
 
         conn = connections['default']
         conn.cursor()
-        print("✅ Database connection successful!")
+        print("✅ Успешное подключение к базе данных")
     except Exception as e:
-        print(f"❌ Database connection failed: {e}")
-        # Fallback на SQLite при ошибке
+        print(f"❌ Ошибка подключения: {e}")
         DATABASES = {
             'default': {
                 'ENGINE': 'django.db.backends.sqlite3',
                 'NAME': BASE_DIR / 'db.sqlite3',
             }
         }
-
 INSTALLED_APPS = [
     'jazzmin',
     'django.contrib.admin',
@@ -144,3 +139,7 @@ SIMPLE_JWT = {
 }
 
 CORS_ALLOW_ALL_ORIGINS = True
+if DEBUG:
+    print("\n⚠️ Current database configuration:")
+    print(f"DATABASE_URL: {os.getenv('DATABASE_URL')}")
+    print(f"DATABASES: {DATABASES}")
