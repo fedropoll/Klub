@@ -6807,7 +6807,7 @@ S2.define('jquery.select2',[
 }());
 
   // Autoload the jQuery bindings
-  // We know that all of the modules exist above this, so we're safeClinic
+  // We know that all of the modules exist above this, so we're safe
   var select2 = S2.require('jquery.select2');
 
   // Hold the AMD module references on the jQuery function that was just loaded
