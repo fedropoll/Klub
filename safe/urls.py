@@ -35,12 +35,22 @@ schema_view = get_schema_view(
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
+from django.http import JsonResponse
+from django.views import View
+
+class NoLoginView(View):
+    def get(self, request):
+        return JsonResponse({"detail": "Login via API token only."}, status=401)
+    def post(self, request):
+        return JsonResponse({"detail": "Login via API token only."}, status=401)
 
 urlpatterns = [
     path('admin/', my_admin_site.urls),
     path('', lambda request: redirect('schema-swagger-ui')),
-    path('', lambda request: HttpResponse("Добро пожаловать в API клиники Safe!")),
-    path('accounts/', include('django.contrib.auth.urls')),  # Добавь это
+    path('welcome/', lambda request: HttpResponse("Добро пожаловать в API клиники Safe!")),
+
+    path('accounts/login/', NoLoginView.as_view(), name='login'),
+
     # Регистрация и подтверждение email
     path('api/register/', RegisterAPIView.as_view(), name='register-staff'),
     path('api/register/client/', ClientRegisterAPIView.as_view(), name='register-client'),
