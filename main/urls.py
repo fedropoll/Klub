@@ -1,4 +1,4 @@
-# /home/asylbek/Desktop/klub/safe/main/urls.py
+# /home/asylbek/Desktop/klub/safe.Clinic/main/urls.py
 
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter

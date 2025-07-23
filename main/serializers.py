@@ -1,4 +1,4 @@
-# /home/asylbek/Desktop/klub/safe/main/serializers.py
+# /home/asylbek/Desktop/klub/safe.Clinic/main/serializers.py
 
 import random
 from datetime import timedelta
