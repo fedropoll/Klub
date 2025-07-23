@@ -1,6 +1,6 @@
 import os
-from pathlib import Path
 from datetime import timedelta
+from pathlib import Path
 import dj_database_url
 from dotenv import load_dotenv
 
@@ -13,7 +13,46 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = ['klub-main.onrender.com', 'localhost', '127.0.0.1']
 
-# Настройки приложений
+# Настройки базы данных (оптимизированная версия)
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+if not DATABASE_URL:
+    print("⚠️ DATABASE_URL not found! Falling back to SQLite")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+else:
+    # Нормализация URL (поддержка старого формата postgres://)
+    if DATABASE_URL.startswith('postgres://'):
+        DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+
+    try:
+        DATABASES = {
+            'default': dj_database_url.parse(
+                DATABASE_URL,
+                conn_max_age=600,
+                ssl_require=True
+            )
+        }
+        # Проверка подключения
+        from django.db import connections
+
+        conn = connections['default']
+        conn.cursor()
+        print("✅ Database connection successful!")
+    except Exception as e:
+        print(f"❌ Database connection failed: {e}")
+        # Fallback на SQLite при ошибке
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
+
 INSTALLED_APPS = [
     'jazzmin',
     'django.contrib.admin',
@@ -66,35 +105,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'safe.wsgi.application'
 
-# Конфигурация базы данных
-DATABASE_URL = os.getenv('DATABASE_URL')
-
-if not DATABASE_URL:
-    print("⚠️ DATABASE_URL not found in environment variables")
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-else:
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=600,
-            ssl_require=True
-        )
-    }
-
-    # Проверка параметров подключения
-    db_config = DATABASES['default']
-    if not all([db_config.get('NAME'), db_config.get('USER'), db_config.get('PASSWORD'), db_config.get('HOST')]):
-        print("⚠️ Incomplete database configuration. Falling back to SQLite")
-        DATABASES['default'] = {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -134,15 +144,3 @@ SIMPLE_JWT = {
 }
 
 CORS_ALLOW_ALL_ORIGINS = True
-
-# Проверка подключения к базе данных при запуске
-try:
-    from django.db import connections
-    conn = connections['default']
-    conn.cursor()
-    print("✅ Database connection successful!")
-except Exception as e:
-    print(f"❌ Database connection failed: {e}")
-    if DEBUG:
-        import sys
-        sys.exit(1)
