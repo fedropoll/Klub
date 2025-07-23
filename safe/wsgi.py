@@ -12,6 +12,5 @@ import os
 from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'safe.Clinic.settings')
-ALLOWED_HOSTS = ['klub-main.onrender.com']
 
 application = get_wsgi_application()
