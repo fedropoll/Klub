@@ -1,9 +1,10 @@
-import os
+
 from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
-import dj_database_url
 from urllib.parse import quote
+import os
+import dj_database_url
 
 load_dotenv()  # загружаем .env
 
@@ -69,22 +70,32 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "safe.wsgi.application"
 
-# Кодируем переменные для безопасности URL
+# Убедитесь, что все переменные окружения установлены
 db_user = quote(os.getenv('DB_USER', ''))
 db_password = quote(os.getenv('DB_PASSWORD', ''))
 db_host = os.getenv('DB_HOST', '')
-db_port = os.getenv('DB_PORT', '')
+db_port = os.getenv('DB_PORT', '5432')  # Добавлено значение по умолчанию
 db_name = os.getenv('DB_NAME', '')
 
-DATABASE_URL = f"postgres://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+# Оба варианта конфигурации (можно оставить оба для перестраховки)
+DATABASE_URL = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
 
 DATABASES = {
-    "default": dj_database_url.config(
-        default=DATABASE_URL,
-        conn_max_age=600,
-        ssl_require=False,
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': db_name,
+        'USER': db_user,
+        'PASSWORD': db_password,
+        'HOST': db_host,
+        'PORT': db_port,
+        'OPTIONS': {
+            'sslmode': 'require',
+        },
+    }
 }
+
+# Альтернативная конфигурация через dj_database_url
+DATABASES['default'].update(dj_database_url.config(conn_max_age=600, ssl_require=True))
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -153,3 +164,33 @@ EMAIL_TIMEOUT = 60
 CORS_ALLOW_ALL_ORIGINS = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
+    'loggers': {
+        'django.db': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+        },
+    },
+}
+# Проверка подключения к БД при запуске
+import sys
+if 'runserver' in sys.argv:
+    try:
+        from django.db import connections
+        conn = connections['default']
+        conn.cursor()
+        print("✅ Database connection successful!")
+    except Exception as e:
+        print(f"❌ Database connection failed: {e}")
+        sys.exit(1)
