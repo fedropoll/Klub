@@ -205,16 +205,3 @@ from rest_framework import serializers
 from .models import Branch, User
 
 
-class BranchSerializer(serializers.ModelSerializer):
-    # director_id - для удобства создания/обновления
-    director_id = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(), source='director', write_only=True, required=False
-    )
-    # director_name - для отображения имени директора
-    director = serializers.CharField(source='director.username', read_only=True)
-
-    class Meta:
-        model = Branch
-        fields = ['id', 'name', 'address', 'phone_number', 'email', 'is_active', 'director', 'director_id', 'photo']
-        read_only_fields = ['id', 'director']
-        ref_name = 'Branch'

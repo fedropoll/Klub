@@ -14,17 +14,3 @@ class IsAdminOrDirector(permissions.BasePermission):
         if hasattr(request.user, 'userprofile'):
             return request.user.userprofile.role in ['admin', 'director']
         return False
-
-class IsAdmin(permissions.BasePermission):
-    """
-    Custom permission to only allow users with 'admin' role to access.
-    """
-    def has_permission(self, request, view):
-        # Проверяем, аутентифицирован ли пользователь
-        if not request.user.is_authenticated:
-            return False
-
-        # Проверяем, имеет ли пользователь профиль и роль 'admin'
-        if hasattr(request.user, 'userprofile'):
-            return request.user.userprofile.role == 'admin'
-        return False
