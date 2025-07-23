@@ -43,7 +43,7 @@ from django.views import View
 
 urlpatterns = [
     path('admin/', my_admin_site.urls),
-    path('', lambda request: redirect('schema-swagger-ui')),
+    path('', lambda request: redirect('swagger')),
     path('welcome/', lambda request: HttpResponse("Добро пожаловать в API клиники Safe!")),
 
     # path('accounts/login/', NoLoginView.as_view(), name='login'),
@@ -69,3 +69,4 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
