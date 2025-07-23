@@ -38,4 +38,4 @@ class Appointment(models.Model):
     time_slot = models.CharField(max_length=20, choices=TIME_SLOTS)
 
     def __str__(self):
-        return f"{self.patient} → {self.doctor} on {self.date} at {self.time_slot}"
+        return f"{getattr(self.patient, 'full_name', '—')} → {getattr(self.doctor, 'full_name', '—')} on {self.date} at {self.time_slot}"

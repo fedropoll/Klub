@@ -14,7 +14,7 @@ class ServiceViewSet(viewsets.ModelViewSet):
     serializer_class = ServiceSerializer
     permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['is_active', 'branch']
+    filterer_fields = ['is_active', 'branch']
 
     @swagger_auto_schema(operation_summary="Список услуг", operation_description="Возвращает список всех медицинских услуг.")
     def list(self, request, *args, **kwargs):

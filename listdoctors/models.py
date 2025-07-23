@@ -26,4 +26,5 @@ class Doctor(models.Model):
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True)
 
     def __str__(self):
-        return f"{self.name} ({self.get_tags_display()})"
+        tag = dict(ROLE_CHOICES).get(self.tags, self.tags)
+        return f"{self.name} ({tag})"

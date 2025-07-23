@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import Branch
-from services.models import Service  # Проверяем, что Service существует в services/models.py
-from main.models import UserProfile, ClientProfile  # Проверяем, что модели существуют в main/models.py
+from safe.services.models import Service  # Проверяем, что Service существует в services/models.py
+from safe.main.models import UserProfile, ClientProfile  # Проверяем, что модели существуют в main/models.py
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 
