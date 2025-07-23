@@ -28,13 +28,12 @@ schema_view = get_schema_view(
         title="API Клиники Safe v1",
         default_version='v1',
         description="Документация по API.",
-        terms_of_service="http://www.google.com/policies/terms/",
         contact=openapi.Contact(email="contact@safe.com"),
-        license=openapi.License(name="BSD License"),
     ),
     public=True,
-    permission_classes=(permissions.AllowAny,),
+    permission_classes=[permissions.AllowAny],  # ← Важно!
 )
+
 from django.http import JsonResponse
 from django.views import View
 
@@ -49,7 +48,7 @@ urlpatterns = [
     path('', lambda request: redirect('schema-swagger-ui')),
     path('welcome/', lambda request: HttpResponse("Добро пожаловать в API клиники Safe!")),
 
-    path('accounts/login/', NoLoginView.as_view(), name='login'),
+    # path('accounts/login/', NoLoginView.as_view(), name='login'),
 
     # Регистрация и подтверждение email
     path('api/register/', RegisterAPIView.as_view(), name='register-staff'),
