@@ -21,8 +21,6 @@ from main.views import (
     VerifyEmailAPIView,
     ResendVerifyCodeAPIView,
 )
-
-
 schema_view = get_schema_view(
     openapi.Info(
         title="API Клиники Safe v1",
@@ -37,11 +35,11 @@ schema_view = get_schema_view(
 from django.http import JsonResponse
 from django.views import View
 
-class NoLoginView(View):
-    def get(self, request):
-        return JsonResponse({"detail": "Login via API token only."}, status=401)
-    def post(self, request):
-        return JsonResponse({"detail": "Login via API token only."}, status=401)
+# class NoLoginView(View):
+#     def get(self, request):
+#         return JsonResponse({"detail": "Login via API token only."}, status=401)
+#     def post(self, request):
+#         return JsonResponse({"detail": "Login via API token only."}, status=401)
 
 urlpatterns = [
     path('admin/', my_admin_site.urls),
@@ -55,18 +53,15 @@ urlpatterns = [
     path('api/register/client/', ClientRegisterAPIView.as_view(), name='register-client'),
     path('api/verify-email/', VerifyEmailAPIView.as_view(), name='verify-email'),
     path('api/resend-verify-code/', ResendVerifyCodeAPIView.as_view(), name='resend-verify-code'),
-
     # JWT токены
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
-
     # API приложений
     path('api/list_doctor/', include('listdoctors.urls')),
     path('api/list_patients/', include('listpatients.urls')),
     path('api/services/', include('services.urls')),
     path('api/', include('main.urls')),
-
     # Swagger и Redoc
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
