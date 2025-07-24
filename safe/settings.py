@@ -10,8 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
-ALLOWED_HOSTS = ['klub-main.onrender.com', 'localhost', '127.0.0.1']
-# Настройки базы данных
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'klub-main.onrender.com,localhost,127.0.0.1').split(',')
 DATABASE_URL = os.getenv('DATABASE_URL')
 
 if not DATABASE_URL:
@@ -143,3 +142,6 @@ if DEBUG:
     print("\n⚠️ Current database configuration:")
     print(f"DATABASE_URL: {os.getenv('DATABASE_URL')}")
     print(f"DATABASES: {DATABASES}")
+print("ALLOWED_HOSTS:", os.getenv('ALLOWED_HOSTS'))
+print("DEBUG:", os.getenv('DEBUG'))
+print("SECRET_KEY:", os.getenv('SECRET_KEY'))
