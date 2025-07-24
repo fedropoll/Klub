@@ -1,24 +1,12 @@
-# /home/asylbek/Desktop/klub/safe/main/urls.py
-
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-
+from django.urls import path
 from .views import (
-    RegisterAPIView,
-    ClientRegisterAPIView,
-    VerifyEmailAPIView,
-    ResendVerifyCodeAPIView,
-    BranchViewSet,
+    ClientRegisterAPIView, VerifyEmailAPIView,
+    ResendVerifyCodeAPIView, StaffRegisterAPIView
 )
 
-router = DefaultRouter()
-router.register(r'branches', BranchViewSet, basename='branch')
-
 urlpatterns = [
-    path('register/staff/', RegisterAPIView.as_view(), name='register-staff'),
-    path('register/client/', ClientRegisterAPIView.as_view(), name='register-client'),
-    path('verify-email/', VerifyEmailAPIView.as_view(), name='verify-email'),
-    path('resend-code/', ResendVerifyCodeAPIView.as_view(), name='resend-code'),
-
-    path('', include(router.urls)),
+    path('register/client/', ClientRegisterAPIView.as_view(), name='register_client'),
+    path('register/staff/', StaffRegisterAPIView.as_view(), name='register_staff'),
+    path('verify-email/', VerifyEmailAPIView.as_view(), name='verify_email'),
+    path('resend-verify-code/', ResendVerifyCodeAPIView.as_view(), name='resend_verify_code'),
 ]

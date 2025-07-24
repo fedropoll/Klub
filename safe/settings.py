@@ -10,25 +10,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Основные настройки
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key')
-DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+DEBUG = True
 
-# ALLOWED_HOSTS читаем как строку, потом разделяем по запятым и убираем пробелы
 ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')]
 
 # Настройка базы данных
 DATABASE_URL = os.getenv('DATABASE_URL')
 
 if DATABASE_URL:
-    # Исправляем префикс, если нужно (старый формат)
     if DATABASE_URL.startswith('postgres://'):
         DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
     try:
         DATABASES = {
             'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
         }
-        # Тестовое подключение к базе
         from django.db import connections
-
         conn = connections['default']
         conn.cursor()
         print("✅ Успешное подключение к базе данных")
@@ -42,7 +38,6 @@ if DATABASE_URL:
             }
         }
 else:
-    # Если DATABASE_URL не задан, используем SQLite (удобно для локальной разработки)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -74,6 +69,7 @@ INSTALLED_APPS = [
     'listdoctors',
     'listpatients',
     'services',
+
 ]
 
 MIDDLEWARE = [
@@ -93,7 +89,7 @@ ROOT_URLCONF = 'safe.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],  # Здесь можно указать свои шаблоны
+        'DIRS': [],  # Папки с шаблонами, если нужны
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -107,7 +103,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'safe.wsgi.application'
 
-# Валидация паролей
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -115,32 +110,28 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Локализация и часовой пояс
 LANGUAGE_CODE = 'ru'
 TIME_ZONE = 'Asia/Bishkek'
 USE_I18N = True
 USE_TZ = True
 
-# Статические файлы
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Медиа-файлы (загрузки)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# REST Framework настройки
+
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
-    ),
-    'DEFAULT_FILTER_BACKENDS': [
-        'django_filters.rest_framework.DjangoFilterBackend',
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        # Для разработки можно добавить SessionAuthentication
+        'rest_framework.authentication.SessionAuthentication',
     ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',  # По умолчанию только аутентифицированным
+    ]
 }
 
 # JWT настройки
@@ -151,10 +142,10 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': os.getenv('BLACKLIST_AFTER_ROTATION', 'True').lower() == 'true',
 }
 
-# CORS настройки
+# CORS
 CORS_ALLOW_ALL_ORIGINS = True
 
-# Отладочная информация (только если DEBUG=True)
+# Отладочная информация (при DEBUG=True)
 if DEBUG:
     print("\n⚠️ Текущие настройки базы данных:")
     print(f"DATABASE_URL: {DATABASE_URL}")
@@ -162,3 +153,9 @@ if DEBUG:
     print(f"ALLOWED_HOSTS: {ALLOWED_HOSTS}")
     print(f"DEBUG: {DEBUG}")
     print(f"SECRET_KEY: {SECRET_KEY[:5]}...")  # Показываем часть ключа для безопасности
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'arstanbekovasil10@gmail.com'
+EMAIL_HOST_PASSWORD = 'whadjhluhbyjnlyw'

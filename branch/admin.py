@@ -1,20 +1,17 @@
 from django.contrib import admin
+from django.utils.html import mark_safe
 from .models import Branch
-from services.models import Service
-
 
 @admin.register(Branch)
 class BranchAdmin(admin.ModelAdmin):
-    list_display = ('name', 'address', 'get_director_email', 'phone_number', 'photo')
-    search_fields = ('name', 'address', 'director__email', 'phone_number')
-    list_filter = ('director',)
+    list_display = ('id', 'name', 'address', 'phone', 'director')  # столбцы в списке
+    search_fields = ('name', 'address', 'phone', 'director__username')  # поиск по этим полям
+    list_filter = ('director',)  # фильтры сбоку
 
-    def get_director_email(self, obj):
-        return obj.director.email if obj.director else None
-    get_director_email.short_description = 'Директор (Email)'
+    readonly_fields = ('photo_preview',)
 
-@admin.register(Service)
-class ServiceAdmin(admin.ModelAdmin):
-    list_display = ('name', 'price', 'branch', 'is_active', 'duration_minutes')
-    list_filter = ('is_active', 'branch')
-    search_fields = ('name', 'description')
+    def photo_preview(self, obj):
+        if obj.photo:
+            return mark_safe(f'<img src="{obj.photo.url}" width="100" height="100" />')
+        return "-"
+    photo_preview.short_description = 'Photo Preview'

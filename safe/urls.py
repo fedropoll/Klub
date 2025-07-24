@@ -1,10 +1,7 @@
-from django.contrib import admin
 from django.http import HttpResponse
-from django.shortcuts import redirect
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
@@ -13,14 +10,8 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenVerifyView,
 )
+from django.contrib import admin
 
-from main.admin import my_admin_site
-from main.views import (
-    RegisterAPIView,
-    ClientRegisterAPIView,
-    VerifyEmailAPIView,
-    ResendVerifyCodeAPIView,
-)
 schema_view = get_schema_view(
     openapi.Info(
         title="API Клиники Safe v1",
@@ -29,39 +20,28 @@ schema_view = get_schema_view(
         contact=openapi.Contact(email="contact@safe.com"),
     ),
     public=True,
-    permission_classes=[permissions.AllowAny],  # ← Важно!
+    permission_classes=[permissions.AllowAny],
 )
 
-from django.http import JsonResponse
-from django.views import View
-
-# class NoLoginView(View):
-#     def get(self, request):
-#         return JsonResponse({"detail": "Login via API token only."}, status=401)
-#     def post(self, request):
-#         return JsonResponse({"detail": "Login via API token only."}, status=401)
-
 urlpatterns = [
-    path('admin/', my_admin_site.urls),
     path('welcome/', lambda request: HttpResponse("Добро пожаловать в API клиники Safe!")),
+    path('admin/', admin.site.urls),
 
-    # path('accounts/login/', NoLoginView.as_view(), name='login'),
+    # Регистрация и верификация (через main.urls)
+    path('api/', include('main.urls')),
 
-    # Регистрация и подтверждение email
-    path('api/register/', RegisterAPIView.as_view(), name='register-staff'),
-    path('api/register/client/', ClientRegisterAPIView.as_view(), name='register-client'),
-    path('api/verify-email/', VerifyEmailAPIView.as_view(), name='verify-email'),
-    path('api/resend-verify-code/', ResendVerifyCodeAPIView.as_view(), name='resend-verify-code'),
-    # JWT токены
+    # JWT аутентификация
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
-    # API приложений
+
+    # Приложения
+    path('api/services/', include('services.urls')),
     path('api/list_doctor/', include('listdoctors.urls')),
     path('api/list_patients/', include('listpatients.urls')),
-    path('api/services/', include('services.urls')),
-    path('api/', include('main.urls')),
-    # Swagger и Redoc
+    path('api/branches/', include('branch.urls')),
+
+    # Документация
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]

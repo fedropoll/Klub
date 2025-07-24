@@ -1,11 +1,13 @@
-from django.urls import path, include
+from django.urls import path
 from rest_framework.routers import DefaultRouter
-from .views import BranchViewSet, ServiceViewSet
+from rest_framework.authtoken.views import obtain_auth_token
+from .views import BranchViewSet
 
 router = DefaultRouter()
 router.register(r'branches', BranchViewSet, basename='branch')
-router.register(r'services', ServiceViewSet, basename='service')
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('api-token-auth/', obtain_auth_token, name='api_token_auth'),  # если нужен токен, иначе можно убрать
 ]
+
+urlpatterns += router.urls

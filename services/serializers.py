@@ -1,21 +1,51 @@
+from django.contrib.auth.models import User
 from rest_framework import serializers
-from .models import Service
+from .models import Service, Category
+
+
+class ClientRegisterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'email', 'first_name', 'last_name', 'password')
+        extra_kwargs = {'password': {'write_only': True}}
+
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            username=validated_data['email'],  # username обязателен
+            email=validated_data['email'],
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', ''),
+            password=validated_data['password']
+        )
+        return user
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['id', 'name']
+
 
 class ServiceSerializer(serializers.ModelSerializer):
-    branch_name = serializers.CharField(source='branch.name', read_only=True)
-    photo_url = serializers.ImageField(source='photo', read_only=True)
-
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    photo_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
         fields = [
             'id', 'name', 'description', 'price', 'duration_minutes',
-            'photo', 'photo_url', 'is_active', 'branch', 'branch_name',
-            'created_at', 'updated_at'
+            'photo', 'photo_url', 'is_active', 'branch',
+            'category', 'category_name'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'branch_name', 'photo_url']
+        read_only_fields = ['id', 'photo_url', 'category_name']
+
+    def get_photo_url(self, obj):
+        request = self.context.get('request')
+        if obj.photo and request:
+            return request.build_absolute_uri(obj.photo.url)
+        elif obj.photo:
+            return obj.photo.url
+        return None
 
     def validate_price(self, value):
         if value <= 0:
@@ -24,11 +54,5 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     def validate_duration_minutes(self, value):
         if value < 15:
-            raise serializers.ValidationError("Длительность должна быть не менее 15 минут.")
+            raise serializers.ValidationError("Минимальная длительность — 15 минут.")
         return value
-
-    def validate(self, attrs):
-        # Убираем возможные попытки изменить даты
-        attrs.pop('created_at', None)
-        attrs.pop('updated_at', None)
-        return attrs

@@ -1,7 +1,8 @@
 from rest_framework.routers import DefaultRouter
-from .views import ServiceViewSet
+from .views import ServiceViewSet, CategoryViewSet
 
 router = DefaultRouter()
 router.register(r'services', ServiceViewSet, basename='service')
+router.register(r'categories', CategoryViewSet, basename='category')
 
 urlpatterns = router.urls
