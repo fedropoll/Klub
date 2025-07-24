@@ -4,63 +4,71 @@ from pathlib import Path
 import dj_database_url
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv()  # Загружаем переменные из .env
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Основные настройки
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key')
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'klub-main.onrender.com,localhost,127.0.0.1').split(',')
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+
+# ALLOWED_HOSTS читаем как строку, потом разделяем по запятым и убираем пробелы
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')]
+
+# Настройка базы данных
 DATABASE_URL = os.getenv('DATABASE_URL')
 
-if not DATABASE_URL:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-else:
-    # Автоматическая коррекция URL
-    if 'postgres://' in DATABASE_URL:
+if DATABASE_URL:
+    # Исправляем префикс, если нужно (старый формат)
+    if DATABASE_URL.startswith('postgres://'):
         DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
-
     try:
         DATABASES = {
-            'default': dj_database_url.parse(
-                DATABASE_URL,
-                conn_max_age=600,
-                ssl_require=True
-            )
+            'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
         }
-        # Проверка подключения
+        # Тестовое подключение к базе
         from django.db import connections
 
         conn = connections['default']
         conn.cursor()
         print("✅ Успешное подключение к базе данных")
     except Exception as e:
-        print(f"❌ Ошибка подключения: {e}")
+        print(f"❌ Ошибка подключения к базе данных: {e}")
+        print("Используется SQLite как запасной вариант")
         DATABASES = {
             'default': {
                 'ENGINE': 'django.db.backends.sqlite3',
                 'NAME': BASE_DIR / 'db.sqlite3',
             }
         }
+else:
+    # Если DATABASE_URL не задан, используем SQLite (удобно для локальной разработки)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+# Приложения
 INSTALLED_APPS = [
-    'jazzmin',
+    'jazzmin',  # Красивая админка
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Сторонние
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'drf_yasg',
     'django_filters',
+
+    # Твои приложения
     'main',
     'branch',
     'listdoctors',
@@ -70,7 +78,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Статические файлы
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -85,7 +93,7 @@ ROOT_URLCONF = 'safe.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [],  # Здесь можно указать свои шаблоны
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -99,6 +107,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'safe.wsgi.application'
 
+# Валидация паролей
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -106,18 +115,22 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
+# Локализация и часовой пояс
 LANGUAGE_CODE = 'ru'
 TIME_ZONE = 'Asia/Bishkek'
 USE_I18N = True
 USE_TZ = True
 
+# Статические файлы
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# Медиа-файлы (загрузки)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# REST Framework настройки
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -130,18 +143,22 @@ REST_FRAMEWORK = {
     ],
 }
 
+# JWT настройки
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('ACCESS_TOKEN_LIFETIME', 60))),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.getenv('REFRESH_TOKEN_LIFETIME', 7))),
+    'ROTATE_REFRESH_TOKENS': os.getenv('ROTATE_REFRESH_TOKENS', 'True').lower() == 'true',
+    'BLACKLIST_AFTER_ROTATION': os.getenv('BLACKLIST_AFTER_ROTATION', 'True').lower() == 'true',
 }
 
+# CORS настройки
 CORS_ALLOW_ALL_ORIGINS = True
+
+# Отладочная информация (только если DEBUG=True)
 if DEBUG:
-    print("\n⚠️ Current database configuration:")
-    print(f"DATABASE_URL: {os.getenv('DATABASE_URL')}")
+    print("\n⚠️ Текущие настройки базы данных:")
+    print(f"DATABASE_URL: {DATABASE_URL}")
     print(f"DATABASES: {DATABASES}")
-print("ALLOWED_HOSTS:", os.getenv('ALLOWED_HOSTS'))
-print("DEBUG:", os.getenv('DEBUG'))
-print("SECRET_KEY:", os.getenv('SECRET_KEY'))
+    print(f"ALLOWED_HOSTS: {ALLOWED_HOSTS}")
+    print(f"DEBUG: {DEBUG}")
+    print(f"SECRET_KEY: {SECRET_KEY[:5]}...")  # Показываем часть ключа для безопасности
