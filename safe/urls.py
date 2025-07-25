@@ -27,21 +27,19 @@ urlpatterns = [
     path('welcome/', lambda request: HttpResponse("Добро пожаловать в API клиники Safe!")),
     path('admin/', admin.site.urls),
 
-    # Регистрация и верификация (через main.urls)
+    # API приложения
     path('api/', include('main.urls')),
-
-    # JWT аутентификация
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
-
-    # Приложения
     path('api/services/', include('services.urls')),
     path('api/list_doctor/', include('listdoctors.urls')),
     path('api/list_patients/', include('listpatients.urls')),
     path('api/branches/', include('branch.urls')),
 
-    # Документация
+    # JWT
+    path('api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    # path('api/auth/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+
+    # Swagger
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]

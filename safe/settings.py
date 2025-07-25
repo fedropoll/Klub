@@ -12,7 +12,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key')
 DEBUG = True
 
-ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')]
+# ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')]
+ALLOWED_HOSTS = ['*']
+
 
 # Настройка базы данных
 DATABASE_URL = os.getenv('DATABASE_URL')
@@ -47,7 +49,6 @@ else:
 
 # Приложения
 INSTALLED_APPS = [
-    'jazzmin',  # Красивая админка
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -124,15 +125,14 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
-        # Для разработки можно добавить SessionAuthentication
-        'rest_framework.authentication.SessionAuthentication',
-    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',  # По умолчанию только аутентифицированным
+        'rest_framework.permissions.AllowAny',
     ]
 }
+
 
 # JWT настройки
 SIMPLE_JWT = {
@@ -145,17 +145,22 @@ SIMPLE_JWT = {
 # CORS
 CORS_ALLOW_ALL_ORIGINS = True
 
-# Отладочная информация (при DEBUG=True)
-if DEBUG:
-    print("\n⚠️ Текущие настройки базы данных:")
-    print(f"DATABASE_URL: {DATABASE_URL}")
-    print(f"DATABASES: {DATABASES}")
-    print(f"ALLOWED_HOSTS: {ALLOWED_HOSTS}")
-    print(f"DEBUG: {DEBUG}")
-    print(f"SECRET_KEY: {SECRET_KEY[:5]}...")  # Показываем часть ключа для безопасности
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'arstanbekovasil10@gmail.com'
 EMAIL_HOST_PASSWORD = 'whadjhluhbyjnlyw'
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization',
+            'description': 'JWT авторизация. Пример: **Bearer <access_token>**',
+        }
+    },
+    'USE_SESSION_AUTH': False,
+    'PERSIST_AUTH': True,
+}
+
