@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'listdoctors',
     'listpatients',
     'services',
+    'appointments',
 
 ]
 

@@ -1,3 +1,5 @@
+# safe/urls.py
+
 from django.http import HttpResponse
 from django.urls import path, include
 from django.conf import settings
@@ -24,8 +26,9 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    path('welcome/', lambda request: HttpResponse("Добро пожаловать в API клиники Safe!")),
     path('admin/', admin.site.urls),
+
+    path('api-auth/', include('rest_framework.urls')),
 
     # API приложения
     path('api/', include('main.urls')),
@@ -33,11 +36,11 @@ urlpatterns = [
     path('api/list_doctor/', include('listdoctors.urls')),
     path('api/list_patients/', include('listpatients.urls')),
     path('api/branches/', include('branch.urls')),
+    path('api/appointments/', include('appointments.urls')),
 
     # JWT
     path('api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    # path('api/auth/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
 
     # Swagger
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

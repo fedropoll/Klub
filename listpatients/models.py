@@ -1,5 +1,5 @@
 from django.db import models
-from listdoctors.models import Doctor
+from listdoctors.models import Doctor  # Импорт доктора из другого приложения
 
 class Patient(models.Model):
     GENDER_CHOICES = [
@@ -38,4 +38,4 @@ class Appointment(models.Model):
     time_slot = models.CharField(max_length=20, choices=TIME_SLOTS)
 
     def __str__(self):
-        return f"{getattr(self.patient, 'full_name', '—')} → {getattr(self.doctor, 'full_name', '—')} on {self.date} at {self.time_slot}"
+        return f"{self.patient} → {self.doctor} on {self.date} at {self.time_slot}"
