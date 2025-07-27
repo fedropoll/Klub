@@ -37,6 +37,7 @@ urlpatterns = [
     path('api/list_patients/', include('listpatients.urls')),
     path('api/branches/', include('branch.urls')),
     path('api/appointments/', include('appointments.urls')),
+    path('api/userprofile/', include('userprofile.urls')), # <-- Добавьте эту строку
 
     # JWT
     path('api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
