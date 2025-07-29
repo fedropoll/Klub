@@ -1,21 +1,28 @@
 from django import forms
-from django.contrib.auth.models import User
-from .models import UserProfile
+from .models import CustomUser, UserProfile
 
 class UserRegisterForm(forms.ModelForm):
-    role = forms.ChoiceField(choices=UserProfile.ROLE_CHOICES, label="Роль", required=True)
-    username = forms.CharField(label="Логин", required=True)
     email = forms.EmailField(label="E-mail", required=True)
-    password1 = forms.CharField(label="Пароль", widget=forms.PasswordInput)
+    password = forms.CharField(label="Пароль", widget=forms.PasswordInput)
+    password2 = forms.CharField(label="Подтверждение пароля", widget=forms.PasswordInput)
 
     class Meta:
-        model = User
-        fields = ['role', 'username', 'email', 'password1']
+        model = CustomUser
+        fields = ['email', 'password', 'password2']
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get("password")
+        password2 = cleaned_data.get("password2")
+
+        if password and password2 and password != password2:
+            self.add_error('password2', "Пароли не совпадают.")
+        return cleaned_data
 
     def save(self, commit=True):
-        user = super().save(commit=False)
-        user.set_password(self.cleaned_data["password1"])
-        if commit:
-            user.save()
-            UserProfile.objects.create(user=user, role=self.cleaned_data["role"])
+        user = CustomUser.objects.create_user(
+            email=self.cleaned_data["email"],
+            password=self.cleaned_data["password"]
+        )
+        UserProfile.objects.create(user=user, role='patient')
         return user

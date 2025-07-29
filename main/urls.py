@@ -1,12 +1,17 @@
 from django.urls import path
+from rest_framework.routers import DefaultRouter
 from .views import (
-    ClientRegisterAPIView, VerifyEmailAPIView,
-    ResendVerifyCodeAPIView, StaffRegisterAPIView
+    UserRegisterView,
+    VerifyEmailView,
+    ResendVerificationCodeView,
+    CurrentUserView,
+    # ChangePasswordView
 )
 
 urlpatterns = [
-    path('register/client/', ClientRegisterAPIView.as_view(), name='register_client'),
-    path('register/staff/', StaffRegisterAPIView.as_view(), name='register_staff'),
-    path('verify-email/', VerifyEmailAPIView.as_view(), name='verify_email'),
-    path('resend-verify-code/', ResendVerifyCodeAPIView.as_view(), name='resend_verify_code'),
+    path('register/', UserRegisterView.as_view(), name='register'),
+    path('verify-email/', VerifyEmailView.as_view(), name='verify_email'),
+    path('resend-code/', ResendVerificationCodeView.as_view(), name='resend_code'),
+    path('me/', CurrentUserView.as_view(), name='current_user_profile'),
+    # path('change-password/', ChangePasswordView.as_view(), name='change_password'),
 ]

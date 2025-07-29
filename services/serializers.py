@@ -1,23 +1,9 @@
-from django.contrib.auth.models import User
+# services/serializers.py
+
 from rest_framework import serializers
 from .models import Service, Category
-
-
-class ClientRegisterSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('id', 'email', 'first_name', 'last_name', 'password')
-        extra_kwargs = {'password': {'write_only': True}}
-
-    def create(self, validated_data):
-        user = User.objects.create_user(
-            username=validated_data['email'],  # username обязателен
-            email=validated_data['email'],
-            first_name=validated_data.get('first_name', ''),
-            last_name=validated_data.get('last_name', ''),
-            password=validated_data['password']
-        )
-        return user
+from branch.models import Branch  # <--- ЭТА СТРОКА ДОЛЖНА БЫТЬ ОБЯЗАТЕЛЬНО!
+from django.conf import settings
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -30,11 +16,13 @@ class ServiceSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     photo_url = serializers.SerializerMethodField()
 
+    branch_id = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all(), source='branch', write_only=True)
+
     class Meta:
         model = Service
         fields = [
             'id', 'name', 'description', 'price', 'duration_minutes',
-            'photo', 'photo_url', 'is_active', 'branch',
+            'photo', 'photo_url', 'is_active', 'branch_id',
             'category', 'category_name'
         ]
         read_only_fields = ['id', 'photo_url', 'category_name']
@@ -44,7 +32,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         if obj.photo and request:
             return request.build_absolute_uri(obj.photo.url)
         elif obj.photo:
-            return obj.photo.url
+            return settings.MEDIA_URL + str(obj.photo)
         return None
 
     def validate_price(self, value):

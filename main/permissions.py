@@ -1,16 +1,32 @@
-# main/permissions.py
 from rest_framework import permissions
 
+
 class IsAdminOrDirector(permissions.BasePermission):
-    """
-    Custom permission to only allow users with 'admin' or 'director' role to access.
-    """
     def has_permission(self, request, view):
-        # Проверяем, аутентифицирован ли пользователь
-        if not request.user.is_authenticated:
+        if not request.user or not request.user.is_authenticated:
             return False
 
-        # Проверяем, имеет ли пользователь профиль и соответствующую роль
-        if hasattr(request.user, 'userprofile'):
-            return request.user.userprofile.role in ['admin', 'director']
+        return hasattr(request.user, 'user_profile') and \
+            request.user.user_profile.role in ['admin', 'director']
+
+
+class IsStaffOrAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+
+        if hasattr(user, 'user_profile'):
+            return user.user_profile.role != 'patient'
         return False
+
+
+class IsOwnerOrAdminOrDirector(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return request.user and request.user.is_authenticated
+
+        if hasattr(obj, 'user') and obj.user == request.user:
+            return True
+
+        return IsAdminOrDirector().has_permission(request, view)

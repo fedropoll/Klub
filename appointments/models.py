@@ -1,5 +1,3 @@
-# appointments/models.py
-
 from django.db import models
 
 TIME_SLOTS = [
@@ -14,7 +12,6 @@ TIME_SLOTS = [
     ('16:00-17:00', '16:00-17:00'),
     ('17:00-18:00', '17:00-18:00'),
 ]
-
 
 class Appointment(models.Model):
     patient = models.ForeignKey(

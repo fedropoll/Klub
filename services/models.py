@@ -26,6 +26,8 @@ class Service(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        verbose_name = "Услуга"
+        verbose_name_plural = "Услуги"
 
     def __str__(self):
         return f"{self.name} ({self.price}₸)"

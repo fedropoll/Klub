@@ -1,16 +1,21 @@
 from rest_framework import serializers
 from .models import Branch
-from django.contrib.auth.models import User
+from main.models import CustomUser, UserProfile
 
 class DirectorSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
-        fields = ['id', 'username', 'first_name', 'last_name']
+        model = CustomUser
+        fields = ['id', 'email', 'first_name', 'last_name']
+        read_only_fields = ['email', 'first_name', 'last_name']
 
 class BranchSerializer(serializers.ModelSerializer):
-    director = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    director_id = serializers.PrimaryKeyRelatedField(
+        queryset=CustomUser.objects.filter(user_profile__role='director'),
+        source='director',
+        write_only=True
+    )
     director_info = DirectorSerializer(source='director', read_only=True)
 
     class Meta:
         model = Branch
-        fields = ['id', 'name', 'address', 'director', 'director_info', 'phone']
+        fields = ['id', 'name', 'address', 'director_id', 'director_info', 'phone']

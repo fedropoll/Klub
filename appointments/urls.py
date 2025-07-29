@@ -1,11 +1,7 @@
-from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import AppointmentViewSet, CalendarUIPickerView
+from .views import AppointmentViewSet
 
 router = DefaultRouter()
-router.register(r'appointments', AppointmentViewSet)
+router.register(r'appointments', AppointmentViewSet, basename='appointment')
 
-urlpatterns = [
-    path('', include(router.urls)),
-    path('calendar/ui/', CalendarUIPickerView.as_view(), name='calendar-ui'),
-]
+urlpatterns = router.urls

@@ -1,80 +1,61 @@
-# appointments/views.py
-
-from rest_framework import viewsets, status
-from rest_framework.permissions import AllowAny
-from rest_framework.views import APIView
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from django.db.models import Count
+from datetime import timedelta
+from django.utils import timezone
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
 
-from .models import Appointment, TIME_SLOTS
+from .models import Appointment # Исправленный импорт
 from .serializers import AppointmentSerializer
-
-import calendar
-from datetime import datetime
-
+from listdoctors.models import Doctor # Убедитесь, что Doctor импортирован, если он используется в analytics
 
 class AppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated] # Добавил IsAuthenticated как базовое разрешение
 
-    def create(self, request, *args, **kwargs):
-        doctor = request.data.get('doctor')
-        date = request.data.get('date')
-        time_slot = request.data.get('time_slot')
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def analytics(self, request):
+        doctor_id = request.query_params.get('doctor')
+        if not doctor_id:
+            return Response({"error": "Не передан параметр doctor"}, status=400)
 
-        if Appointment.objects.filter(doctor=doctor, date=date, time_slot=time_slot).exists():
-            raise ValidationError("Это время уже занято. Пожалуйста, выберите другое.")
+        try:
+            doctor = Doctor.objects.get(id=doctor_id)
+        except Doctor.DoesNotExist:
+            return Response({"error": "Доктор не найден"}, status=404)
 
-        return super().create(request, *args, **kwargs)
+        today = timezone.now().date()
+        week_ago = today - timedelta(days=7)
 
+        qs = Appointment.objects.filter(
+            doctor=doctor,
+            date__gte=week_ago,
+            date__lte=today
+        )
 
-class AvailableTimeSlotsView(APIView):
-    def get(self, request):
-        doctor_id = request.GET.get('doctor')
-        date = request.GET.get('date')
+        total_appointments = qs.count()
+        unique_patients = qs.values('patient').distinct().count()
 
-        if not doctor_id or not date:
-            return Response({"error": "Не хватает параметров: doctor и date"}, status=400)
+        load_by_day = (
+            qs.values('date')
+            .annotate(count=Count('id'))
+            .order_by('date')
+        )
 
-        taken_slots = Appointment.objects.filter(
-            doctor_id=doctor_id,
-            date=date
-        ).values_list('time_slot', flat=True)
+        days_of_week = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС']
+        weekday_counts = {day: 0 for day in days_of_week}
 
-        available_slots = [slot for slot, _ in TIME_SLOTS if slot not in taken_slots]
+        for record in load_by_day:
+            d = record['date']
+            if d:
+                weekday_index = d.weekday()
+                label = days_of_week[weekday_index]
+                weekday_counts[label] = record['count']
 
-        return Response({"available_slots": available_slots})
-
-
-class CalendarUIPickerView(APIView):
-    def get(self, request):
-        today = datetime.today()
-        year = int(request.GET.get('year', today.year))
-        month = int(request.GET.get('month', today.month))
-        selected = request.GET.get('selected')
-
-        MONTH_NAMES_RU = [
-            "Янв", "Фев", "Мар", "Апр", "Май", "Июн",
-            "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"
-        ]
-        WEEKDAYS_RU = ["ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС"]
-
-        cal = calendar.Calendar(firstweekday=0)
-        month_days = cal.monthdayscalendar(year, month)
-        month_grid = [
-            [f"{year}-{month:02d}-{day:02d}" if day != 0 else "" for day in week]
-            for week in month_days
-        ]
-
-        response = {
-            "year": year,
-            "month": month,
-            "month_name": MONTH_NAMES_RU[month - 1],
-            "weekdays": WEEKDAYS_RU,
-            "weeks": month_grid,
-            "today": today.strftime("%Y-%m-%d"),
-            "selected": selected or ""
-        }
-
-        return Response(response)
+        return Response({
+            "total_appointments": total_appointments,
+            "unique_patients": unique_patients,
+            "load_by_weekday": weekday_counts
+        })
