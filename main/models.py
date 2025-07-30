@@ -29,10 +29,13 @@ class CustomUserManager(BaseUserManager):
 
 
 class CustomUser(AbstractUser):
+    # Явно делаем username необязательным и уникальным, чтобы избежать конфликтов
+    # когда USERNAME_FIELD установлен в email.
+    username = models.CharField(max_length=150, unique=True, null=True, blank=True)
     email = models.EmailField(unique=True, null=False, blank=False)
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = ['username'] # Теперь username не требуется при создании, но остается в REQUIRED_FIELDS
 
     objects = CustomUserManager()
 
@@ -69,7 +72,7 @@ class ClientProfile(models.Model):
     address = models.CharField(max_length=255, blank=True, null=True)
     about = models.TextField(blank=True, null=True)
     is_email_verified = models.BooleanField(default=False)
-    confirmation_code = models.CharField(max_length=6, blank=True, null=True)
+    confirmation_code = models.CharField(max_length=4, blank=True, null=True) # 4-значный код
     code_created_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
@@ -78,7 +81,7 @@ class ClientProfile(models.Model):
 
 class EmailVerificationCode(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='verification_code')
-    code = models.CharField(max_length=6)
+    code = models.CharField(max_length=4) # 4-значный код
     created_at = models.DateTimeField(auto_now_add=True)
     is_used = models.BooleanField(default=False)
 
@@ -91,6 +94,9 @@ class EmailVerificationCode(models.Model):
 
 @receiver(post_save, sender=CustomUser)
 def save_user_profile(sender, instance, **kwargs):
+    UserProfile.objects.get_or_create(user=instance)
+    ClientProfile.objects.get_or_create(user=instance)
+
     if hasattr(instance, 'user_profile'):
         instance.user_profile.save()
     if hasattr(instance, 'client_profile') and instance.client_profile is not None:

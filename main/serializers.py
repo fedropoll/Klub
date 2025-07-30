@@ -58,12 +58,22 @@ class CurrentUserSerializer(serializers.ModelSerializer):
         )
 
 
-# class ChangePasswordSerializer(serializers.Serializer): # Убрано
-#     old_password = serializers.CharField(required=True)
-#     new_password = serializers.CharField(required=True)
-#     confirm_password = serializers.CharField(required=True)
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+    confirm_password = serializers.CharField(required=True)
 
-#     def validate(self, data):
-#         if data['new_password'] != data['confirm_password']:
-#             raise serializers.ValidationError({"new_password": "Новые пароли должны совпадать."})
-#         return data
+    def validate(self, data):
+        if data['new_password'] != data['confirm_password']:
+            raise serializers.ValidationError({"new_password": "Новые пароли должны совпадать."})
+        return data
+
+
+class ResendCodeSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+
+
+class VerifyEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    code = serializers.CharField(required=True, max_length=4) # max_length 4 для 4-значного кода
+

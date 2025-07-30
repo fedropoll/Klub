@@ -1,5 +1,5 @@
 from django.db import models
-from listdoctors.models import Doctor  # Импорт доктора из другого приложения
+from listdoctors.models import Doctor
 
 class Patient(models.Model):
     GENDER_CHOICES = [
