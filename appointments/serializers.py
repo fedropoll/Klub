@@ -3,16 +3,17 @@ from .models import Appointment
 from listdoctors.models import Doctor
 from listpatients.models import Patient
 
+# Убедитесь, что эти импорты корректны для ваших приложений listdoctors и listpatients
 from listdoctors.serializers import DoctorSerializer as BaseDoctorSerializer
 from listpatients.serializers import PatientSerializer as BasePatientSerializer
 
 class DoctorSerializer(BaseDoctorSerializer):
     class Meta(BaseDoctorSerializer.Meta):
-        ref_name = 'AppointmentDoctorSerializer'
+        ref_name = 'AppointmentDoctorSerializer' # Уникальное имя для доктора в контексте записей
 
 class PatientSerializer(BasePatientSerializer):
     class Meta(BasePatientSerializer.Meta):
-        ref_name = 'AppointmentPatientSerializer'
+        ref_name = 'AppointmentPatientSerializer' # Уникальное имя для пациента в контексте записей
 
 class AppointmentSerializer(serializers.ModelSerializer):
     patient = PatientSerializer(read_only=True)
@@ -32,3 +33,4 @@ class AppointmentSerializer(serializers.ModelSerializer):
             'patient_id': {'write_only': True},
             'doctor_id': {'write_only': True},
         }
+        ref_name = 'AppointmentsAppAppointmentSerializer' # <-- ИСПРАВЛЕНИЕ ЗДЕСЬ: Уникальное имя для AppointmentSerializer из приложения appointments

@@ -31,9 +31,9 @@ urlpatterns = [
     path('api/list_patients/', include('listpatients.urls')),
     path('api/branches/', include('branch.urls')),
     path('api/appointments/', include('appointments.urls')),
+    path('api/analytics/', include('analytics.urls')), # <-- ДОБАВЛЕНО
 
     path('api/auth/', include('main.urls')),
-
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),

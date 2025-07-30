@@ -58,7 +58,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
-    'drf_yasg', # <-- Убедитесь, что drf_yasg здесь
+    'drf_yasg',
     'django_filters',
 
     'branch',
@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     'services',
     'appointments',
     'main',
+    'analytics', # <-- ДОБАВЛЕНО
 ]
 
 MIDDLEWARE = [
@@ -135,7 +136,7 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('ACCESS_TOKEN_LIFETIME', 60))),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.getenv('REFRESH_TOKEN_LIFETIME', 7))),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.getenv('REFRESH_TOKEN_LANCETIME', 7))),
     'ROTATE_REFRESH_TOKENS': os.getenv('ROTATE_REFRESH_TOKENS', 'True').lower() == 'true',
     'BLACKLIST_AFTER_ROTATION': os.getenv('BLACKLIST_AFTER_ROTATION', 'True').lower() == 'true',
 }

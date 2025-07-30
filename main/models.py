@@ -4,6 +4,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from datetime import timedelta
 from django.utils import timezone
+from listdoctors.models import Doctor
 
 
 class CustomUserManager(BaseUserManager):
@@ -29,13 +30,11 @@ class CustomUserManager(BaseUserManager):
 
 
 class CustomUser(AbstractUser):
-    # Явно делаем username необязательным и уникальным, чтобы избежать конфликтов
-    # когда USERNAME_FIELD установлен в email.
     username = models.CharField(max_length=150, unique=True, null=True, blank=True)
     email = models.EmailField(unique=True, null=False, blank=False)
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username'] # Теперь username не требуется при создании, но остается в REQUIRED_FIELDS
+    REQUIRED_FIELDS = []
 
     objects = CustomUserManager()
 
@@ -72,7 +71,7 @@ class ClientProfile(models.Model):
     address = models.CharField(max_length=255, blank=True, null=True)
     about = models.TextField(blank=True, null=True)
     is_email_verified = models.BooleanField(default=False)
-    confirmation_code = models.CharField(max_length=4, blank=True, null=True) # 4-значный код
+    confirmation_code = models.CharField(max_length=6, blank=True, null=True)
     code_created_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
@@ -81,7 +80,7 @@ class ClientProfile(models.Model):
 
 class EmailVerificationCode(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='verification_code')
-    code = models.CharField(max_length=4) # 4-значный код
+    code = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
     is_used = models.BooleanField(default=False)
 
@@ -92,12 +91,76 @@ class EmailVerificationCode(models.Model):
         return f"Код для {self.user.email}: {self.code}"
 
 
-@receiver(post_save, sender=CustomUser)
-def save_user_profile(sender, instance, **kwargs):
-    UserProfile.objects.get_or_create(user=instance)
-    ClientProfile.objects.get_or_create(user=instance)
+class Appointment(models.Model):
+    STATUS_CHOICES = [
+        ('scheduled', 'Запланировано'),
+        ('completed', 'Завершено'),
+        ('cancelled', 'Отменено'),
+        ('rescheduled', 'Перенесено'),
+    ]
+    client = models.ForeignKey(ClientProfile, on_delete=models.CASCADE, related_name='appointments')
+    doctor = models.ForeignKey('listdoctors.Doctor', on_delete=models.SET_NULL, null=True, blank=True, related_name='doctor_appointments')
+    service = models.ForeignKey('services.Service', on_delete=models.SET_NULL, null=True, blank=True, related_name='service_appointments')
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    if hasattr(instance, 'user_profile'):
-        instance.user_profile.save()
-    if hasattr(instance, 'client_profile') and instance.client_profile is not None:
-        instance.client_profile.save()
+    class Meta:
+        ordering = ['start_time']
+        verbose_name = "Запись"
+        verbose_name_plural = "Записи"
+
+    def __str__(self):
+        doctor_name = "N/A"
+        if self.doctor:
+            try:
+                doctor_name = self.doctor.user_profile.user.get_full_name() or self.doctor.user_profile.user.email
+            except AttributeError:
+                pass
+
+        return f"Запись {self.client.full_name or self.client.user.email} с Dr. {doctor_name} на {self.start_time.strftime('%Y-%m-%d %H:%M')}"
+
+
+class Payment(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Ожидает оплаты'),
+        ('paid', 'Оплачено'),
+        ('refunded', 'Возвращено'),
+        ('failed', 'Неуспешно'),
+    ]
+    client = models.ForeignKey(ClientProfile, on_delete=models.CASCADE, related_name='payments')
+    appointment = models.OneToOneField(Appointment, on_delete=models.SET_NULL, null=True, blank=True, related_name='payment')
+    service = models.ForeignKey('services.Service', on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_date = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    transaction_id = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f"Оплата {self.amount} от {self.client.full_name or self.client.user.email} ({self.get_status_display()})"
+
+    class Meta:
+        ordering = ['-payment_date']
+        verbose_name = "Оплата"
+        verbose_name_plural = "Оплаты"
+
+
+@receiver(post_save, sender=CustomUser)
+def create_or_update_user_profiles(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.create(user=instance)
+        ClientProfile.objects.create(user=instance)
+        if instance.user_profile.role in ['doctor', 'director']:
+            Doctor.objects.create(user_profile=instance.user_profile)
+    else:
+        if hasattr(instance, 'user_profile'):
+            instance.user_profile.save()
+            if instance.user_profile.role in ['doctor', 'director'] and not hasattr(instance.user_profile, 'doctor_profile'):
+                Doctor.objects.create(user_profile=instance.user_profile)
+            elif instance.user_profile.role not in ['doctor', 'director'] and hasattr(instance.user_profile, 'doctor_profile'):
+                instance.user_profile.doctor_profile.delete()
+        if hasattr(instance, 'client_profile'):
+            instance.client_profile.save()
