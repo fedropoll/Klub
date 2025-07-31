@@ -8,7 +8,7 @@ from rest_framework.response import Response
 
 from .models import Appointment # Исправленный импорт
 from .serializers import AppointmentSerializer
-from listdoctors.models import Doctor # Убедитесь, что Doctor импортирован, если он используется в analytics
+from listdoctors.models import Doctor # Убедитесь, что Doctor импортирован, если он используется в data_analytics
 
 class AppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment.objects.all()

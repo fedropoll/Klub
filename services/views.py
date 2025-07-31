@@ -1,5 +1,5 @@
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from rest_framework.decorators import action
@@ -19,7 +19,7 @@ class ServiceViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['is_active', 'branch', 'category']
     ordering_fields = ['price', 'name', 'created_at']
-    permission_classes = [ReadOnlyOrAdminOrDirector]
+    permission_classes = [AllowAny] # Разрешает доступ как с токеном, так и без него
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def analytics(self, request):

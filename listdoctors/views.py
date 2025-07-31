@@ -11,26 +11,23 @@ class DoctorViewSet(viewsets.ModelViewSet):
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
     parser_classes = [MultiPartParser, FormParser]
-    permission_classes = [AllowAny]
+    permission_classes = [AllowAny] # Разрешает доступ как с токеном, так и без него
+
     @action(detail=False, methods=['get'], url_path='search')
     def search_doctors(self, request):
         queryset = self.queryset
 
-        # Фильтр по тегу (роли)
         tags = request.query_params.get('tags')
         if tags:
             queryset = queryset.filter(tags=tags)
 
-        # Фильтр по полу
         gender = request.query_params.get('gender')
         if gender:
             queryset = queryset.filter(gender=gender)
 
-        # Фильтр по возрастному диапазону
         age_range = request.query_params.get('age_range')
         if age_range:
             try:
-                # Пример: 30-40
                 min_age, max_age = map(int, age_range.split('-'))
                 today = date.today()
                 max_birthdate = date(today.year - min_age, today.month, today.day)
