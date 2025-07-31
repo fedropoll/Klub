@@ -7,16 +7,16 @@ from smtplib import SMTPAuthenticationError
 def custom_exception_handler(exc, context):
     response = exception_handler(exc, context)
 
-    if isinstance(exc, SMTPAuthenticationError):
-        return Response(
-            {
-                'detail': 'Ошибка при отправке email для подтверждения. Пожалуйста, проверьте настройки почты (EMAIL_HOST_USER и EMAIL_PASSWORD) и убедитесь, что вы используете пароль приложений Google.'},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
     if response is None:
         return Response(
             {'detail': 'Произошла внутренняя ошибка сервера. Пожалуйста, свяжитесь с администратором.'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    if isinstance(exc, SMTPAuthenticationError):
+        return Response(
+            {
+                'detail': 'Ошибка при отправке email для подтверждения. Пожалуйста, свяжитесь с администратором или проверьте настройки почты.'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
