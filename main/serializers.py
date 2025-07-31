@@ -1,11 +1,9 @@
 from rest_framework import serializers
 from .models import CustomUser, UserProfile, ClientProfile, Appointment, Payment, EmailVerificationCode
-
 from listdoctors.models import Doctor
-from services.models import Service
-
+from services.models import Service # Импортируем Service
 from listdoctors.serializers import DoctorSerializer
-from services.serializers import ServiceSerializer
+from services.serializers import ServiceSerializer # Импортируем ServiceSerializer
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -53,7 +51,7 @@ class ClientProfileSerializer(serializers.ModelSerializer):
 class CurrentUserSerializer(serializers.ModelSerializer):
     user_profile = UserProfileSerializer(read_only=True)
     client_profile = ClientProfileSerializer(read_only=True)
-    doctor_profile = DoctorSerializer(source='user_profile.doctor_profile', read_only=True) # <-- ДОБАВЛЕНО
+    doctor_profile = DoctorSerializer(source='user_profile.doctor_profile', read_only=True)
 
     class Meta:
         model = CustomUser
@@ -61,7 +59,7 @@ class CurrentUserSerializer(serializers.ModelSerializer):
             'id', 'email', 'first_name', 'last_name',
             'is_active', 'is_staff', 'is_superuser',
             'date_joined', 'last_login',
-            'user_profile', 'client_profile', 'doctor_profile' # <-- ДОБАВЛЕНО
+            'user_profile', 'client_profile', 'doctor_profile'
         )
 
 
@@ -71,7 +69,7 @@ class ResendCodeSerializer(serializers.Serializer):
 
 class VerifyEmailSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
-    code = serializers.CharField(required=True, max_length=6)
+    code = serializers.CharField(required=True, max_length=4) # max_length 4 для 4-значного кода
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
@@ -125,3 +123,27 @@ class AppointmentCreateSerializer(serializers.ModelSerializer):
         else:
             raise serializers.ValidationError("Только аутентифицированные пользователи с профилем клиента могут создавать записи.")
         return super().create(validated_data)
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+    confirm_password = serializers.CharField(required=True)
+
+    def validate(self, data):
+        if data['new_password'] != data['confirm_password']:
+            raise serializers.ValidationError({"new_password": "Новые пароли должны совпадать."})
+        return data
+
+
+class UserListSerializer(serializers.ModelSerializer):
+    user_profile = UserProfileSerializer(read_only=True)
+    client_profile = ClientProfileSerializer(read_only=True)
+
+    class Meta:
+        model = CustomUser
+        fields = (
+            'id', 'email', 'first_name', 'last_name',
+            'is_active', 'is_staff', 'is_superuser',
+            'user_profile', 'client_profile'
+        )

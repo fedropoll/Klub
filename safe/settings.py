@@ -58,7 +58,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
-    'drf_yasg',
+    'drf_yasg', # Или 'drf_spectacular' если вы перешли на него
     'django_filters',
 
     'branch',
@@ -67,7 +67,7 @@ INSTALLED_APPS = [
     'services',
     'appointments',
     'main',
-    'analytics', # <-- ДОБАВЛЕНО
+    'analytics', # Добавлено приложение analytics
 ]
 
 MIDDLEWARE = [
@@ -116,9 +116,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = BASE_DIR / 'media' # Убедитесь, что эта строка есть
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -130,12 +131,13 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
-    'EXCEPTION_HANDLER': 'safe.custom_exception_handler.custom_exception_handler',
+    'EXCEPTION_HANDLER': 'safe.custom_exception_handler.custom_exception_handler', # Добавлен обработчик исключений
+    # 'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema', # Если используете drf-spectacular
 }
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('ACCESS_TOKEN_LIFETIME', 60))),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.getenv('REFRESH_TOKEN_LANCETIME', 7))),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.getenv('REFRESH_TOKEN_LIFETIME', 7))),
     'ROTATE_REFRESH_TOKENS': os.getenv('ROTATE_REFRESH_TOKENS', 'True').lower() == 'true',
     'BLACKLIST_AFTER_ROTATION': os.getenv('BLACKLIST_AFTER_ROTATION', 'True').lower() == 'true',
 }
@@ -149,6 +151,7 @@ EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'arstanbekovasil10@gmail.com')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD', 'ffbaxdilmebrolbj')
 
+# Настройки для drf_yasg
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
         'Bearer': {
@@ -161,15 +164,31 @@ SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': False,
     'PERSIST_AUTH': True,
 }
-AUTH_USER_MODEL = 'main.CustomUser'
-MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-import dj_database_url
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default='sqlite:///db.sqlite3',
-        conn_max_age=600,
-        ssl_require=True
-    )
-}
+# Если используете drf-spectacular, раскомментируйте и настройте это, удалив SWAGGER_SETTINGS
+# SPECTACULAR_SETTINGS = {
+#     'TITLE': 'API Клиники Safe',
+#     'DESCRIPTION': 'Документация по API для Safe Clinic',
+#     'VERSION': '1.0.0',
+#     'SERVE_INCLUDE_SCHEMA': False,
+#     'SCHEMA_PATH_PREFIX': r'/api/',
+#     'SWAGGER_UI_SETTINGS': {
+#         'deepLinking': True,
+#         'displayRequestDuration': True,
+#         'filter': True,
+#         'showExtensions': True,
+#         'showCommonExtensions': True,
+#     },
+#     'COMPONENT_SPLIT_REQUEST': True,
+#     'SECURITY': [
+#         {
+#             'BearerAuth': [],
+#         }
+#     ],
+#     'OAUTH2_FLOWS': {},
+#     'POSTPROCESSING_HOOKS': [
+#         'drf_spectacular.contrib.djangorestframework_simplejwt.djangorestframework_simplejwt_hook',
+#     ],
+# }
+
+AUTH_USER_MODEL = 'main.CustomUser'

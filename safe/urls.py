@@ -11,6 +11,10 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 
+# Если используете drf-spectacular, замените импорты drf_yasg на:
+# from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+
+
 schema_view = get_schema_view(
     openapi.Info(
         title="API Клиники Safe v1",
@@ -31,15 +35,22 @@ urlpatterns = [
     path('api/list_patients/', include('listpatients.urls')),
     path('api/branches/', include('branch.urls')),
     path('api/appointments/', include('appointments.urls')),
-    path('api/analytics/', include('analytics.urls')), # <-- ДОБАВЛЕНО
+    path('api/analytics/', include('analytics.urls')), # Добавлено приложение analytics
 
-    path('api/auth/', include('main.urls')),
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/auth/', include('main.urls')), # Эндпоинты для регистрации, профиля и т.д.
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'), # Используем напрямую
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
 
+
+    # Пути для drf_yasg
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+
+    # Если используете drf-spectacular, замените пути drf_yasg на:
+    # path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    # path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    # path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
 
 if settings.DEBUG:
