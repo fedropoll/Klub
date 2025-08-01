@@ -18,15 +18,12 @@ if DEBUG:
 DATABASE_URL = os.getenv('DATABASE_URL')
 
 if DATABASE_URL:
-    # Заменяем 'postgres://' на 'postgresql://' для совместимости с dj-database-url
     if DATABASE_URL.startswith('postgres://'):
         DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
     try:
-        # Для Render PostgreSQL обычно требуется ssl_require=True
         DATABASES = {
             'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
         }
-        # Проверка подключения к базе данных
         from django.db import connections
         conn = connections['default']
         conn.cursor()
@@ -152,6 +149,16 @@ EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'arstanbekovasil10@gmail.com')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD', 'ffbaxdilmebrolbj')
+
+# Настройки для Twilio (для WhatsApp и SMS)
+TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
+TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
+TWILIO_WHATSAPP_NUMBER = os.getenv('TWILIO_WHATSAPP_NUMBER')
+TWILIO_SMS_NUMBER = os.getenv('TWILIO_SMS_NUMBER')  # <-- НОВЫЙ НОМЕР ДЛЯ SMS
+
+# Настройки для Telegram Bot API
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
         'Bearer': {
