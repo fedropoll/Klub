@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     'services',
     'appointments',
     'main',
+    'data_analytics', # <-- ДОБАВЛЕНО
 ]
 
 MIDDLEWARE = [
@@ -115,7 +116,6 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -130,11 +130,12 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
+    'EXCEPTION_HANDLER': 'safe.custom_exception_handler.custom_exception_handler',
 }
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('ACCESS_TOKEN_LIFETIME', 60))),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.getenv('REFRESH_TOKEN_LIFETIME', 7))),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.getenv('REFRESH_TOKEN_LIFETIME', 7))),  # Было 'REFRESH_TOKEN_LANCETIME'
     'ROTATE_REFRESH_TOKENS': os.getenv('ROTATE_REFRESH_TOKENS', 'True').lower() == 'true',
     'BLACKLIST_AFTER_ROTATION': os.getenv('BLACKLIST_AFTER_ROTATION', 'True').lower() == 'true',
 }
@@ -145,19 +146,35 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'your_email@gmail.com')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'your_app_password')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'arstanbekovasil10@gmail.com')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD', 'ffbaxdilmebrolbj')
 
+# Настройки drf-yasg (Swagger)
 SWAGGER_SETTINGS = {
+    'DEFAULT_INFO': 'safe.urls.schema_view',
     'SECURITY_DEFINITIONS': {
         'Bearer': {
             'type': 'apiKey',
-            'in': 'header',
             'name': 'Authorization',
-            'description': 'JWT авторизация. Пример: **Bearer <access_token>**',
+            'in': 'header',
+            'description': 'JWT token в формате: Bearer <token>'
         }
     },
     'USE_SESSION_AUTH': False,
-    'PERSIST_AUTH': True,
+    'OPERATIONS_SORTER': 'alpha',
+    'TAGS_SORTER': 'alpha',
+    'DEFAULT_MODEL_RENDERING': 'example',
+    'DOC_EXPANSION': 'list',
 }
 AUTH_USER_MODEL = 'main.CustomUser'
+MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+import dj_database_url
+
+# DATABASES = {
+#     'default': dj_database_url.config(
+#         default='sqlite:///db.sqlite3',
+#         conn_max_age=600,
+#         ssl_require=True
+#     )
+# }

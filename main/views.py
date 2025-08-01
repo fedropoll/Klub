@@ -1,14 +1,25 @@
 from rest_framework import generics, permissions, status, viewsets
+from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import CustomUser, UserProfile, ClientProfile, EmailVerificationCode
+from rest_framework.parsers import JSONParser
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
+from .models import CustomUser, ClientProfile, EmailVerificationCode, Appointment, Payment
+from listdoctors.models import Doctor  # <-- Импортируем Doctor
 from .serializers import (
     UserRegistrationSerializer,
     UserProfileSerializer,
     ClientProfileSerializer,
     CurrentUserSerializer,
-    # ChangePasswordSerializer # Убрано
+    AppointmentSerializer,
+    PaymentSerializer,
+    AppointmentCreateSerializer,
+    ResendCodeSerializer,
+    VerifyEmailSerializer,
 )
+from listdoctors.serializers import DoctorSerializer  # <-- Импортируем DoctorSerializer для обновления профиля врача
 from django.conf import settings
 from django.core.mail import send_mail
 import random
@@ -20,10 +31,13 @@ class UserRegisterView(generics.CreateAPIView):
     serializer_class = UserRegistrationSerializer
     permission_classes = [permissions.AllowAny]
 
-    def perform_create(self, serializer):
+    @swagger_auto_schema(request_body=UserRegistrationSerializer)
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         user = serializer.save()
         self._send_verification_email(user)
-        return user
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def _send_verification_email(self, user):
         code = str(random.randint(100000, 999999))
@@ -38,12 +52,33 @@ class UserRegisterView(generics.CreateAPIView):
         send_mail(subject, message, email_from, recipient_list)
 
 
-class VerifyEmailView(APIView):
+@swagger_auto_schema(
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['email', 'code'],
+        properties={
+            'email': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL,
+                                    description='Email пользователя'),
+            'code': openapi.Schema(type=openapi.TYPE_STRING, description='Код подтверждения из письма', min_length=6,
+                                   max_length=6),
+        }
+    ),
+    responses={
+        200: openapi.Response(description='Email успешно подтвержден!'),
+        400: openapi.Response(description='Неверный код или истек срок действия'),
+        404: openapi.Response(description='Пользователь не найден')
+    }
+)
+class VerifyEmailView(GenericAPIView):
     permission_classes = [permissions.AllowAny]
+    serializer_class = VerifyEmailSerializer
+    parser_classes = [JSONParser]
 
     def post(self, request):
-        email = request.data.get('email')
-        code = request.data.get('code')
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data.get('email')
+        code = serializer.validated_data.get('code')
 
         try:
             user = CustomUser.objects.get(email=email)
@@ -70,11 +105,30 @@ class VerifyEmailView(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
 
-class ResendVerificationCodeView(APIView):
+@swagger_auto_schema(
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['email'],
+        properties={
+            'email': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL,
+                                    description='Email пользователя'),
+        }
+    ),
+    responses={
+        200: openapi.Response(description='Новый код подтверждения отправлен на ваш email!'),
+        404: openapi.Response(description='Пользователь не найден')
+    }
+)
+class ResendVerificationCodeView(GenericAPIView):
     permission_classes = [permissions.AllowAny]
+    serializer_class = ResendCodeSerializer
+    parser_classes = [JSONParser]
 
     def post(self, request):
-        email = request.data.get('email')
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data.get('email')
+
         try:
             user = CustomUser.objects.get(email=email)
             UserRegisterView()._send_verification_email(user)
@@ -83,6 +137,10 @@ class ResendVerificationCodeView(APIView):
             return Response({'detail': 'Пользователь не найден.'}, status=status.HTTP_404_NOT_FOUND)
 
 
+@swagger_auto_schema(
+    responses={200: CurrentUserSerializer},
+    request_body=CurrentUserSerializer
+)
 class CurrentUserView(generics.RetrieveUpdateAPIView):
     serializer_class = CurrentUserSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -112,27 +170,65 @@ class CurrentUserView(generics.RetrieveUpdateAPIView):
             client_profile_serializer.is_valid(raise_exception=True)
             client_profile_serializer.save()
 
+        # Обновление DoctorProfile
+        doctor_profile_data = request.data.get('doctor_profile')
+        if doctor_profile_data and user.user_profile.role in ['doctor', 'director']:
+            doctor_profile, created = Doctor.objects.get_or_create(user_profile=user.user_profile)
+            doctor_serializer = DoctorSerializer(doctor_profile, data=doctor_profile_data, partial=partial)
+            doctor_serializer.is_valid(raise_exception=True)
+            doctor_serializer.save()
+
         return Response(self.get_serializer(user).data)
 
 
-# class ChangePasswordView(generics.UpdateAPIView): # Убрано
-#     serializer_class = ChangePasswordSerializer
-#     permission_classes = [permissions.IsAuthenticated]
+# ChangePasswordView удален
 
-#     def get_object(self):
-#         return self.request.user
 
-#     def update(self, request, *args, **kwargs):
-#         self.object = self.get_object()
-#         serializer = self.get_serializer(data=request.data)
+class AppointmentListView(generics.ListAPIView):
+    serializer_class = AppointmentSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-#         if serializer.is_valid():
-#             if not self.object.check_password(serializer.data.get("old_password")):
-#                 return Response({"old_password": ["Неверный пароль."]}, status=status.HTTP_400_BAD_REQUEST)
+    def get_queryset(self):
+        if hasattr(self.request.user, 'client_profile'):
+            return Appointment.objects.filter(client=self.request.user.client_profile).order_by('-start_time')
+        return Appointment.objects.none()
 
-#             self.object.set_password(serializer.data.get("new_password"))
-#             self.object.save()
 
-#             return Response({"detail": "Пароль успешно изменен."}, status=status.HTTP_200_OK)
+class AppointmentDetailView(generics.RetrieveAPIView):
+    serializer_class = AppointmentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = Appointment.objects.all()
 
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def get_queryset(self):
+        if hasattr(self.request.user, 'client_profile'):
+            return Appointment.objects.filter(client=self.request.user.client_profile)
+        return Appointment.objects.none()
+
+
+class AppointmentCreateView(generics.CreateAPIView):
+    serializer_class = AppointmentCreateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+
+class PaymentListView(generics.ListAPIView):
+    serializer_class = PaymentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        if hasattr(self.request.user, 'client_profile'):
+            return Payment.objects.filter(client=self.request.user.client_profile).order_by('-payment_date')
+        return Payment.objects.none()
+
+
+class PaymentDetailView(generics.RetrieveAPIView):
+    serializer_class = PaymentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = Payment.objects.all()
+
+    def get_queryset(self):
+        if hasattr(self.request.user, 'client_profile'):
+            return Payment.objects.filter(client=self.request.user.client_profile)
+        return Payment.objects.none()

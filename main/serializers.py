@@ -1,5 +1,11 @@
 from rest_framework import serializers
-from .models import CustomUser, UserProfile, ClientProfile
+from .models import CustomUser, UserProfile, ClientProfile, Appointment, Payment, EmailVerificationCode
+
+from listdoctors.models import Doctor
+from services.models import Service
+
+from listdoctors.serializers import DoctorSerializer
+from services.serializers import ServiceSerializer
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -47,6 +53,7 @@ class ClientProfileSerializer(serializers.ModelSerializer):
 class CurrentUserSerializer(serializers.ModelSerializer):
     user_profile = UserProfileSerializer(read_only=True)
     client_profile = ClientProfileSerializer(read_only=True)
+    doctor_profile = DoctorSerializer(source='user_profile.doctor_profile', read_only=True) # <-- ДОБАВЛЕНО
 
     class Meta:
         model = CustomUser
@@ -54,16 +61,67 @@ class CurrentUserSerializer(serializers.ModelSerializer):
             'id', 'email', 'first_name', 'last_name',
             'is_active', 'is_staff', 'is_superuser',
             'date_joined', 'last_login',
-            'user_profile', 'client_profile'
+            'user_profile', 'client_profile', 'doctor_profile' # <-- ДОБАВЛЕНО
         )
 
 
-# class ChangePasswordSerializer(serializers.Serializer): # Убрано
-#     old_password = serializers.CharField(required=True)
-#     new_password = serializers.CharField(required=True)
-#     confirm_password = serializers.CharField(required=True)
+class ResendCodeSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
 
-#     def validate(self, data):
-#         if data['new_password'] != data['confirm_password']:
-#             raise serializers.ValidationError({"new_password": "Новые пароли должны совпадать."})
-#         return data
+
+class VerifyEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    code = serializers.CharField(required=True, max_length=6)
+
+
+class AppointmentSerializer(serializers.ModelSerializer):
+    doctor = DoctorSerializer(read_only=True)
+    service = ServiceSerializer(read_only=True)
+
+    class Meta:
+        model = Appointment
+        fields = [
+            'id', 'doctor', 'service', 'start_time', 'end_time',
+            'status', 'notes', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at', 'status']
+        ref_name = 'MainAppAppointmentSerializer'
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    service = ServiceSerializer(read_only=True)
+
+    class Meta:
+        model = Payment
+        fields = [
+            'id', 'service', 'amount', 'payment_date', 'status', 'transaction_id', 'appointment'
+        ]
+        read_only_fields = ['id', 'payment_date', 'status', 'transaction_id', 'amount', 'appointment']
+        ref_name = 'MainAppPaymentSerializer'
+
+
+class AppointmentCreateSerializer(serializers.ModelSerializer):
+    doctor = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all())
+    service = serializers.PrimaryKeyRelatedField(queryset=Service.objects.all())
+
+    class Meta:
+        model = Appointment
+        fields = [
+            'doctor', 'service', 'start_time', 'end_time', 'notes'
+        ]
+        ref_name = 'MainAppAppointmentCreateSerializer'
+
+
+    def validate(self, data):
+        if data['start_time'] >= data['end_time']:
+            raise serializers.ValidationError("Время окончания должно быть позже времени начала.")
+
+        return data
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        if request and hasattr(request.user, 'client_profile'):
+            validated_data['client'] = request.user.client_profile
+        else:
+            raise serializers.ValidationError("Только аутентифицированные пользователи с профилем клиента могут создавать записи.")
+        return super().create(validated_data)
