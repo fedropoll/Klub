@@ -30,3 +30,13 @@ class IsOwnerOrAdminOrDirector(permissions.BasePermission):
             return True
 
         return IsAdminOrDirector().has_permission(request, view)
+
+class IsInRole(permissions.BasePermission):
+    def __init__(self, allowed_roles):
+        self.allowed_roles = allowed_roles
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        return hasattr(user, 'user_profile') and user.user_profile.role in self.allowed_roles

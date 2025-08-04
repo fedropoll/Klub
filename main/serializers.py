@@ -1,7 +1,9 @@
 from rest_framework import serializers
 from .models import CustomUser, UserProfile, ClientProfile, Appointment, Payment, EmailVerificationCode
+
 from listdoctors.models import Doctor
 from services.models import Service
+
 from listdoctors.serializers import DoctorSerializer
 from services.serializers import ServiceSerializer
 
@@ -24,9 +26,11 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop('password2')
+
         user = CustomUser.objects.create_user(**validated_data)
         UserProfile.objects.update_or_create(user=user, defaults={'role': 'patient'})
-        client_profile = ClientProfile.objects.get_or_create(user=user)[0]
+        ClientProfile.objects.get_or_create(user=user)
+
         return user
 
 
@@ -49,7 +53,7 @@ class ClientProfileSerializer(serializers.ModelSerializer):
 class CurrentUserSerializer(serializers.ModelSerializer):
     user_profile = UserProfileSerializer(read_only=True)
     client_profile = ClientProfileSerializer(read_only=True)
-    doctor_profile = DoctorSerializer(source='user_profile.doctor_profile', read_only=True)
+    doctor_profile = DoctorSerializer(source='user_profile.doctor_profile', read_only=True) # <-- ДОБАВЛЕНО
 
     class Meta:
         model = CustomUser
@@ -57,7 +61,7 @@ class CurrentUserSerializer(serializers.ModelSerializer):
             'id', 'email', 'first_name', 'last_name',
             'is_active', 'is_staff', 'is_superuser',
             'date_joined', 'last_login',
-            'user_profile', 'client_profile', 'doctor_profile'
+            'user_profile', 'client_profile', 'doctor_profile' # <-- ДОБАВЛЕНО
         )
 
 
@@ -67,7 +71,7 @@ class ResendCodeSerializer(serializers.Serializer):
 
 class VerifyEmailSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
-    code = serializers.CharField(required=True, max_length=4)
+    code = serializers.CharField(required=True, max_length=6)
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
@@ -121,44 +125,34 @@ class AppointmentCreateSerializer(serializers.ModelSerializer):
         else:
             raise serializers.ValidationError("Только аутентифицированные пользователи с профилем клиента могут создавать записи.")
         return super().create(validated_data)
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework import serializers
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 
-class ChangePasswordSerializer(serializers.Serializer):
-    old_password = serializers.CharField(required=True)
-    new_password = serializers.CharField(required=True)
-    confirm_password = serializers.CharField(required=True)
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    role = serializers.CharField(write_only=True)
 
-    def validate(self, data):
-        if data['new_password'] != data['confirm_password']:
-            raise serializers.ValidationError({"new_password": "Новые пароли должны совпадать."})
+    def validate(self, attrs):
+        # Получаем email, пароль и роль из запроса
+        email = attrs.get("email")
+        password = attrs.get("password")
+        role = attrs.get("role")
+
+        # Проверяем что email и пароль корректные
+        user = User.objects.filter(email=email).first()
+        if not user:
+            raise serializers.ValidationError("Пользователь с таким email не найден")
+        if not user.check_password(password):
+            raise serializers.ValidationError("Неверный пароль")
+
+        # Проверяем роль
+        if not hasattr(user, 'user_profile'):
+            raise serializers.ValidationError("Профиль пользователя не найден")
+        if user.user_profile.role != role:
+            raise serializers.ValidationError("Роль пользователя не совпадает")
+
+        # Если всё ок, возвращаем токены (используем родительский валидатор)
+        data = super().validate(attrs)
         return data
-
-
-class UserListSerializer(serializers.ModelSerializer):
-    user_profile = UserProfileSerializer(read_only=True)
-    client_profile = ClientProfileSerializer(read_only=True)
-
-    class Meta:
-        model = CustomUser
-        fields = (
-            'id', 'email', 'first_name', 'last_name',
-            'is_active', 'is_staff', 'is_superuser',
-            'user_profile', 'client_profile'
-        )
-
-class SendCodeByPhoneSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
-    phone_number = serializers.CharField(required=True, max_length=20)
-    method = serializers.ChoiceField(choices=['whatsapp', 'telegram'], required=True)
-
-
-class SendSMSMessageSerializer(serializers.Serializer):
-    phone_number = serializers.CharField(required=True, max_length=20, help_text="Номер телефона в формате E.164 (напр., +77011234567)")
-    message = serializers.CharField(required=True, max_length=160, help_text="Текст сообщения")
-
-    def validate_phone_number(self, value):
-        # Простая валидация номера телефона.
-        # Twilio ожидает формат E.164.
-        if not value.startswith('+'):
-            raise serializers.ValidationError("Номер телефона должен начинаться с кода страны (+).")
-        return value

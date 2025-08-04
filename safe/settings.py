@@ -133,6 +133,7 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
     'EXCEPTION_HANDLER': 'safe.custom_exception_handler.custom_exception_handler',
+
 }
 
 SIMPLE_JWT = {
@@ -173,3 +174,4 @@ SWAGGER_SETTINGS = {
     'PERSIST_AUTH': True,
 }
 AUTH_USER_MODEL = 'main.CustomUser'
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

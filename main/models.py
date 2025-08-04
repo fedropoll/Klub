@@ -5,6 +5,7 @@ from django.dispatch import receiver
 from datetime import timedelta
 from django.utils import timezone
 from listdoctors.models import Doctor
+from .permissions import IsInRole
 
 
 class CustomUserManager(BaseUserManager):
@@ -51,7 +52,7 @@ class UserProfile(models.Model):
         ('staff', 'Персонал'),
     )
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='user_profile')
-    role = models.CharField(max_length=10, choices=ROLES, default='patient')
+    role = models.CharField(max_length=10, choices=ROLES, default='patient')  # default добавлен
 
     def __str__(self):
         return f"{self.user.email} - {self.get_role_display()}"
@@ -139,13 +140,13 @@ class Payment(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     transaction_id = models.CharField(max_length=255, blank=True, null=True)
 
-    def __str__(self):
-        return f"Оплата {self.amount} от {self.client.full_name or self.client.user.email} ({self.get_status_display()})"
-
     class Meta:
         ordering = ['-payment_date']
         verbose_name = "Оплата"
         verbose_name_plural = "Оплаты"
+
+    def __str__(self):
+        return f"Оплата {self.amount} от {self.client.full_name or self.client.user.email} ({self.get_status_display()})"
 
 
 @receiver(post_save, sender=CustomUser)
@@ -164,3 +165,11 @@ def create_or_update_user_profiles(sender, instance, created, **kwargs):
                 instance.user_profile.doctor_profile.delete()
         if hasattr(instance, 'client_profile'):
             instance.client_profile.save()
+
+
+class IsDoctor(IsInRole):
+    allowed_roles = ['doctor']
+
+
+class IsDoctorOrDirector(IsInRole):
+    allowed_roles = ['doctor', 'director']

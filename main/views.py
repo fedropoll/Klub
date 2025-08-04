@@ -1,11 +1,13 @@
 from rest_framework import generics, permissions, status, viewsets
+from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
-from .models import CustomUser, UserProfile, ClientProfile, EmailVerificationCode
+from .models import CustomUser, ClientProfile, EmailVerificationCode, Appointment, Payment
+from listdoctors.models import Doctor  # <-- Импортируем Doctor
 from .serializers import (
     UserRegistrationSerializer,
     UserProfileSerializer,
@@ -15,21 +17,13 @@ from .serializers import (
     PaymentSerializer,
     AppointmentCreateSerializer,
     ResendCodeSerializer,
-    VerifyEmailSerializer,
-    ChangePasswordSerializer,
-    UserListSerializer,
-    SendCodeByPhoneSerializer,
-    SendSMSMessageSerializer  # Импортируем новый сериализатор
+    VerifyEmailSerializer, MyTokenObtainPairSerializer,
 )
-from .utils import send_whatsapp_message, send_telegram_message, send_sms_message  # Импортируем новую функцию
+from listdoctors.serializers import DoctorSerializer  # <-- Импортируем DoctorSerializer для обновления профиля врача
 from django.conf import settings
 from django.core.mail import send_mail
 import random
 from django.utils import timezone
-import logging
-from datetime import timedelta
-
-logger = logging.getLogger(__name__)
 
 
 class UserRegisterView(generics.CreateAPIView):
@@ -37,13 +31,16 @@ class UserRegisterView(generics.CreateAPIView):
     serializer_class = UserRegistrationSerializer
     permission_classes = [permissions.AllowAny]
 
-    def perform_create(self, serializer):
+    @swagger_auto_schema(request_body=UserRegistrationSerializer)
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         user = serializer.save()
         self._send_verification_email(user)
-        return user
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def _send_verification_email(self, user):
-        code = str(random.randint(1000, 9999))
+        code = str(random.randint(100000, 999999))
         EmailVerificationCode.objects.update_or_create(
             user=user,
             defaults={'code': code, 'is_used': False, 'created_at': timezone.now()}
@@ -52,11 +49,7 @@ class UserRegisterView(generics.CreateAPIView):
         message = f'Ваш код подтверждения: {code}'
         email_from = settings.EMAIL_HOST_USER
         recipient_list = [user.email]
-        try:
-            send_mail(subject, message, email_from, recipient_list)
-            logger.info(f"Email verification code sent to {user.email}")
-        except Exception as e:
-            logger.error(f"Failed to send email verification code to {user.email}: {e}")
+        send_mail(subject, message, email_from, recipient_list)
 
 
 @swagger_auto_schema(
@@ -66,8 +59,8 @@ class UserRegisterView(generics.CreateAPIView):
         properties={
             'email': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL,
                                     description='Email пользователя'),
-            'code': openapi.Schema(type=openapi.TYPE_STRING, description='Код подтверждения из письма', min_length=4,
-                                   max_length=4),
+            'code': openapi.Schema(type=openapi.TYPE_STRING, description='Код подтверждения из письма', min_length=6,
+                                   max_length=6),
         }
     ),
     responses={
@@ -76,13 +69,13 @@ class UserRegisterView(generics.CreateAPIView):
         404: openapi.Response(description='Пользователь не найден')
     }
 )
-class VerifyEmailView(APIView):
+class VerifyEmailView(GenericAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = VerifyEmailSerializer
     parser_classes = [JSONParser]
 
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data.get('email')
         code = serializer.validated_data.get('code')
@@ -126,13 +119,12 @@ class VerifyEmailView(APIView):
         404: openapi.Response(description='Пользователь не найден')
     }
 )
-class ResendVerificationCodeView(generics.CreateAPIView):
+class ResendVerificationCodeView(GenericAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = ResendCodeSerializer
-    queryset = CustomUser.objects.none()
     parser_classes = [JSONParser]
 
-    def create(self, request, *args, **kwargs):
+    def post(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data.get('email')
@@ -145,6 +137,10 @@ class ResendVerificationCodeView(generics.CreateAPIView):
             return Response({'detail': 'Пользователь не найден.'}, status=status.HTTP_404_NOT_FOUND)
 
 
+@swagger_auto_schema(
+    responses={200: CurrentUserSerializer},
+    request_body=CurrentUserSerializer
+)
 class CurrentUserView(generics.RetrieveUpdateAPIView):
     serializer_class = CurrentUserSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -174,124 +170,69 @@ class CurrentUserView(generics.RetrieveUpdateAPIView):
             client_profile_serializer.is_valid(raise_exception=True)
             client_profile_serializer.save()
 
+        # Обновление DoctorProfile
+        doctor_profile_data = request.data.get('doctor_profile')
+        if doctor_profile_data and user.user_profile.role in ['doctor', 'director']:
+            doctor_profile, created = Doctor.objects.get_or_create(user_profile=user.user_profile)
+            doctor_serializer = DoctorSerializer(doctor_profile, data=doctor_profile_data, partial=partial)
+            doctor_serializer.is_valid(raise_exception=True)
+            doctor_serializer.save()
+
         return Response(self.get_serializer(user).data)
 
 
-class ChangePasswordView(generics.UpdateAPIView):
-    serializer_class = ChangePasswordSerializer
+# ChangePasswordView удален
+
+
+class AppointmentListView(generics.ListAPIView):
+    serializer_class = AppointmentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_object(self):
-        return self.request.user
-
-    def update(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        serializer = self.get_serializer(data=request.data)
-
-        if serializer.is_valid():
-            if not self.object.check_password(serializer.data.get("old_password")):
-                return Response({"old_password": ["Неверный пароль."]}, status=status.HTTP_400_BAD_REQUEST)
-
-            self.object.set_password(serializer.data.get("new_password"))
-            self.object.save()
-
-            return Response({"detail": "Пароль успешно изменен."}, status=status.HTTP_200_OK)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def get_queryset(self):
+        if hasattr(self.request.user, 'client_profile'):
+            return Appointment.objects.filter(client=self.request.user.client_profile).order_by('-start_time')
+        return Appointment.objects.none()
 
 
-class UserListViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = CustomUser.objects.all().select_related('user_profile', 'client_profile')
-    serializer_class = UserListSerializer
-    permission_classes = [permissions.IsAdminUser]
+class AppointmentDetailView(generics.RetrieveAPIView):
+    serializer_class = AppointmentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = Appointment.objects.all()
+
+    def get_queryset(self):
+        if hasattr(self.request.user, 'client_profile'):
+            return Appointment.objects.filter(client=self.request.user.client_profile)
+        return Appointment.objects.none()
 
 
-@swagger_auto_schema(
-    request_body=SendCodeByPhoneSerializer,
-    responses={
-        200: openapi.Response(description='Код подтверждения отправлен на указанный номер.'),
-        400: openapi.Response(description='Неверные данные запроса или ошибка отправки.'),
-        404: openapi.Response(description='Пользователь или код подтверждения не найден.')
-    }
-)
-class SendCodeByPhoneView(APIView):
-    permission_classes = [permissions.AllowAny]
-    serializer_class = SendCodeByPhoneSerializer
-    parser_classes = [JSONParser]
+class AppointmentCreateView(generics.CreateAPIView):
+    serializer_class = AppointmentCreateSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        email = serializer.validated_data.get('email')
-        phone_number = serializer.validated_data.get('phone_number')
-        method = serializer.validated_data.get('method')
-
-        try:
-            user = CustomUser.objects.get(email=email)
-            verification_code_obj = EmailVerificationCode.objects.filter(
-                user=user, is_used=False, created_at__gt=timezone.now() - timedelta(minutes=10)
-            ).order_by('-created_at').first()
-
-            if not verification_code_obj:
-                code = str(random.randint(1000, 9999))
-                verification_code_obj = EmailVerificationCode.objects.create(
-                    user=user, code=code, created_at=timezone.now(), is_used=False
-                )
-                logger.info(f"New verification code generated for {user.email}: {code}")
-            else:
-                code = verification_code_obj.code
-                logger.info(f"Reusing existing verification code for {user.email}: {code}")
-
-            message_text = f"Ваш код подтверждения для Safe Clinic: {code}"
-            success = False
-            error_message = ""
-
-            if method == 'whatsapp':
-                if not phone_number.startswith('whatsapp:'):
-                    phone_number = f"whatsapp:{phone_number}"
-                success, error_message = send_whatsapp_message(to_phone_number=phone_number, message=message_text)
-            elif method == 'telegram':
-                success, error_message = send_telegram_message(chat_id=phone_number, message=message_text)
-
-            if success:
-                return Response({'detail': f'Код подтверждения отправлен на {phone_number} через {method}.'},
-                                status=status.HTTP_200_OK)
-            else:
-                return Response({'detail': f'Не удалось отправить код подтверждения: {error_message}'},
-                                status=status.HTTP_400_BAD_REQUEST)
-
-        except CustomUser.DoesNotExist:
-            return Response({'detail': 'Пользователь не найден.'}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            logger.error(f"Unexpected error in SendCodeByPhoneView: {e}")
-            return Response({'detail': 'Произошла внутренняя ошибка сервера.'},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    def perform_create(self, serializer):
+        serializer.save()
 
 
-@swagger_auto_schema(
-    request_body=SendSMSMessageSerializer,
-    responses={
-        200: openapi.Response(description='Сообщение SMS успешно отправлено.'),
-        400: openapi.Response(description='Неверные данные запроса или ошибка отправки.'),
-    }
-)
-class SendSMSMessageView(APIView):
-    permission_classes = [permissions.AllowAny]
-    serializer_class = SendSMSMessageSerializer
-    parser_classes = [JSONParser]
+class PaymentListView(generics.ListAPIView):
+    serializer_class = PaymentSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    def get_queryset(self):
+        if hasattr(self.request.user, 'client_profile'):
+            return Payment.objects.filter(client=self.request.user.client_profile).order_by('-payment_date')
+        return Payment.objects.none()
 
-        phone_number = serializer.validated_data.get('phone_number')
-        message = serializer.validated_data.get('message')
 
-        success, error_message = send_sms_message(to_phone_number=phone_number, message=message)
+class PaymentDetailView(generics.RetrieveAPIView):
+    serializer_class = PaymentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = Payment.objects.all()
 
-        if success:
-            return Response({'detail': 'Сообщение SMS успешно отправлено.'}, status=status.HTTP_200_OK)
-        else:
-            return Response({'detail': f'Не удалось отправить SMS: {error_message}'},
-                            status=status.HTTP_400_BAD_REQUEST)
+    def get_queryset(self):
+        if hasattr(self.request.user, 'client_profile'):
+            return Payment.objects.filter(client=self.request.user.client_profile)
+        return Payment.objects.none()
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
