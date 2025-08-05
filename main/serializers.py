@@ -135,24 +135,22 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     role = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
-        # Получаем email, пароль и роль из запроса
         email = attrs.get("email")
         password = attrs.get("password")
         role = attrs.get("role")
 
-        # Проверяем что email и пароль корректные
         user = User.objects.filter(email=email).first()
         if not user:
             raise serializers.ValidationError("Пользователь с таким email не найден")
         if not user.check_password(password):
             raise serializers.ValidationError("Неверный пароль")
-
-        # Проверяем роль
         if not hasattr(user, 'user_profile'):
             raise serializers.ValidationError("Профиль пользователя не найден")
         if user.user_profile.role != role:
             raise serializers.ValidationError("Роль пользователя не совпадает")
 
-        # Если всё ок, возвращаем токены (используем родительский валидатор)
         data = super().validate(attrs)
+        data['role'] = user.user_profile.role
+        data['email'] = user.email
         return data
+
