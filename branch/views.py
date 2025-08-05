@@ -6,6 +6,7 @@ from .serializers import BranchSerializer
 from .permissions import ReadOnlyOrAdminOrDirector # Using our custom permission
 
 class BranchViewSet(viewsets.ModelViewSet):
+
     queryset = Branch.objects.all()
     serializer_class = BranchSerializer
     permission_classes = [ReadOnlyOrAdminOrDirector] # Reading for all, writing for admin/director

@@ -18,7 +18,7 @@ class Doctor(models.Model):
     photo = models.ImageField(upload_to='doctor_photos/', null=True, blank=True)
     name = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
-    tags = models.CharField(max_length=30, choices=ROLE_CHOICES)  # как просил
+    tags = models.CharField(max_length=30, choices=ROLE_CHOICES)
     clients = models.TextField(blank=True)
     birth_date = models.DateField(null=True, blank=True)
     address = models.CharField(max_length=255, blank=True)
