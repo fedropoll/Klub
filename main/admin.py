@@ -1,8 +1,7 @@
 from django.contrib import admin
-from .models import CustomUser, UserProfile, ClientProfile, EmailVerificationCode
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from .models import CustomUser, UserProfile, ClientProfile, EmailVerificationCode
 
-# Если уже регистрировали CustomUser где-то, то надо сначала отрегистировать
 try:
     admin.site.unregister(CustomUser)
 except admin.sites.NotRegistered:
@@ -10,9 +9,21 @@ except admin.sites.NotRegistered:
 
 @admin.register(CustomUser)
 class CustomUserAdmin(BaseUserAdmin):
-    list_display = ('email', 'first_name', 'last_name', 'is_active')
-    search_fields = ('email', 'first_name', 'last_name')
-    # Не добавляем inline профили, чтобы не создавать дубликаты
+    model = CustomUser
+    list_display = ('email', 'is_staff', 'is_active')
+    list_filter = ('is_staff', 'is_active')
+    ordering = ('email',)
+    search_fields = ('email',)
+    fieldsets = (
+        (None, {'fields': ('email', 'password', 'username')}),
+        ('Permissions', {'fields': ('is_staff', 'is_active', 'is_superuser', 'groups', 'user_permissions')}),
+    )
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('email', 'password1', 'password2', 'username', 'is_staff', 'is_active'),
+        }),
+    )
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
@@ -26,9 +37,9 @@ class ClientProfileAdmin(admin.ModelAdmin):
 
 @admin.register(EmailVerificationCode)
 class EmailVerificationCodeAdmin(admin.ModelAdmin):
-    list_display = ['user', 'code', 'created_at', 'is_used', 'is_expired']
-    list_filter = ['is_used']
-    search_fields = ['user__email', 'code']
+    list_display = ('user', 'code', 'created_at', 'is_used', 'is_expired')
+    list_filter = ('is_used',)
+    search_fields = ('user__email', 'code')
 
     def is_expired(self, obj):
         return obj.is_expired()
