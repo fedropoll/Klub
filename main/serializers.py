@@ -137,7 +137,6 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         email = attrs.get("email")
         password = attrs.get("password")
-        role = attrs.get("role")
 
         user = User.objects.filter(email=email).first()
         if not user:
@@ -146,11 +145,8 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
             raise serializers.ValidationError("Неверный пароль")
         if not hasattr(user, 'user_profile'):
             raise serializers.ValidationError("Профиль пользователя не найден")
-        if user.user_profile.role != role:
-            raise serializers.ValidationError("Роль пользователя не совпадает")
 
         data = super().validate(attrs)
-        data['role'] = user.user_profile.role
         data['email'] = user.email
         return data
 

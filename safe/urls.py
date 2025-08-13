@@ -28,18 +28,15 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
 
-    path('api/services/', include('services.urls')),
-    path('api/list_doctor/', include('listdoctors.urls')),
-    path('api/list_patients/', include('listpatients.urls')),
-    path('api/branches/', include('branch.urls')),
-    path('api/appointments/', include('appointments.urls')),
-    path('api/analytics/', include('data_analytics.urls')), # <-- ДОБАВЛЕНО
+    path('services/', include('services.urls')),
+    path('list_doctor/', include('listdoctors.urls')),
+    path('list_patients/', include('listpatients.urls')),
+    path('branches/', include('branch.urls')),
+    path('appointments/', include('appointments.urls')),
+    path('analytics/', include('data_analytics.urls')), # <-- ДОБАВЛЕНО
 
-    path('api/auth/', include('main.urls')),
-    path('api/token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
-
+    path('', include('main.urls')),
+    path('api/token/', MyTokenObtainPairView.as_view(), name='token_refresh'), # Эндпоинт для refresh-токена
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]

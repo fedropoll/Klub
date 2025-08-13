@@ -7,7 +7,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 from .models import CustomUser, ClientProfile, EmailVerificationCode, Appointment, Payment
-from listdoctors.models import Doctor  # <-- Импортируем Doctor
+from listdoctors.models import Doctor
 from .serializers import (
     UserRegistrationSerializer,
     UserProfileSerializer,
@@ -19,7 +19,7 @@ from .serializers import (
     ResendCodeSerializer,
     VerifyEmailSerializer, MyTokenObtainPairSerializer,
 )
-from listdoctors.serializers import DoctorSerializer  # <-- Импортируем DoctorSerializer для обновления профиля врача
+from listdoctors.serializers import DoctorSerializer
 from django.conf import settings
 from django.core.mail import send_mail
 import random

@@ -14,10 +14,10 @@ from .views import (
 )
 
 urlpatterns = [
-    path('register/', UserRegisterView.as_view(), name='register'),
-    path('verify-email/', VerifyEmailView.as_view(), name='verify_email'),
-    path('resend-code/', ResendVerificationCodeView.as_view(), name='resend_code'),
-    path('me/', CurrentUserView.as_view(), name='current_user_profile'),
+    path('auth/register/', UserRegisterView.as_view(), name='register'),
+    path('auth/verify-email/', VerifyEmailView.as_view(), name='verify_email'),
+    path('auth/resend-code/', ResendVerificationCodeView.as_view(), name='resend_code'),
+    path('profile/me/', CurrentUserView.as_view(), name='current_user_profile'),
 
     path('appointments/', AppointmentListView.as_view(), name='appointment_list'),
     path('appointments/create/', AppointmentCreateView.as_view(), name='appointment_create'),
