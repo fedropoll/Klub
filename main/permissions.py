@@ -1,13 +1,11 @@
 from rest_framework import permissions
 
+from rest_framework import permissions
 
 class IsAdminOrDirector(permissions.BasePermission):
     def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
+        return request.user.is_authenticated and hasattr(request.user, 'user_profile') and request.user.user_profile.role in ['admin','director']
 
-        return hasattr(request.user, 'user_profile') and \
-            request.user.user_profile.role in ['admin', 'director']
 
 
 class IsStaffOrAdmin(permissions.BasePermission):

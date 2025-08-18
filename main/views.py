@@ -5,7 +5,14 @@ from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import (
+    MyTokenObtainPairSerializer,
+    AdminTokenObtainPairSerializer,
+    DoctorTokenObtainPairSerializer,
+    DirectorTokenObtainPairSerializer
+)
 from .models import CustomUser, ClientProfile, EmailVerificationCode, Appointment, Payment
 from listdoctors.models import Doctor
 from .serializers import (
@@ -119,6 +126,19 @@ class VerifyEmailView(GenericAPIView):
         404: openapi.Response(description='Пользователь не найден')
     }
 )
+
+class DirectorTokenObtainPairView(TokenObtainPairView):
+    serializer_class = DirectorTokenObtainPairSerializer
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
+
+class AdminTokenObtainPairView(TokenObtainPairView):
+    serializer_class = AdminTokenObtainPairSerializer
+
+class DoctorTokenObtainPairView(TokenObtainPairView):
+    serializer_class = DoctorTokenObtainPairSerializer
+
 class ResendVerificationCodeView(GenericAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = ResendCodeSerializer

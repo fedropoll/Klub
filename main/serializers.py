@@ -1,13 +1,42 @@
 from rest_framework import serializers
-from .models import CustomUser, UserProfile, ClientProfile, Appointment, Payment, EmailVerificationCode
-
+from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from .models import CustomUser, UserProfile, ClientProfile, Appointment, Payment
 from listdoctors.models import Doctor
 from services.models import Service
-
 from listdoctors.serializers import DoctorSerializer
 from services.serializers import ServiceSerializer
 
+User = get_user_model()
 
+# ------------------- JWT для любого пользователя -------------------
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        email = attrs.get("email")
+        password = attrs.get("password")
+        role = attrs.get("role")
+
+        user = User.objects.filter(email=email).first()
+        if not user:
+            raise serializers.ValidationError("Пользователь с таким email не найден")
+        if not user.check_password(password):
+            raise serializers.ValidationError("Неверный пароль")
+        if not hasattr(user, 'user_profile'):
+            raise serializers.ValidationError("Профиль пользователя не найден")
+
+        data = super().validate(attrs)
+        data['email'] = user.email
+        data['role'] = user.user_profile.role
+        return data
+
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token["role"] = user.user_profile.role if hasattr(user, "user_profile") else "unknown"
+        return token
+
+
+# ------------------- Регистрация пациента -------------------
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
     password2 = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
@@ -26,14 +55,72 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop('password2')
-
         user = CustomUser.objects.create_user(**validated_data)
         UserProfile.objects.update_or_create(user=user, defaults={'role': 'patient'})
         ClientProfile.objects.get_or_create(user=user)
-
         return user
+class RoleTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        user_profile = self.user.user_profile  # вместо userprofile
+        data['role'] = user_profile.role
+        return data
+
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token["role"] = user.user_profile.role if hasattr(user, "user_profile") else "unknown"
+        return token
 
 
+
+class DirectorTokenObtainPairSerializer(RoleTokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        if self.user.user_profile.role != 'director':
+            raise serializers.ValidationError("Вы не директор")
+        return data
+
+
+# ------------------- Общий сериализатор с role -------------------
+class RoleTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        # Добавляем роль в ответ
+        data['role'] = self.user.user_profile.role if hasattr(self.user, 'user_profile') else 'unknown'
+        return data
+
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['role'] = user.user_profile.role if hasattr(user, 'user_profile') else 'unknown'
+        return token
+
+# ------------------- Конкретные роли -------------------
+class MyTokenObtainPairSerializer(RoleTokenObtainPairSerializer):
+    pass  # Для обычных пациентов/клиентов
+
+class AdminTokenObtainPairSerializer(RoleTokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        if self.user.user_profile.role != 'admin':
+            raise serializers.ValidationError("Вы не админ")
+        return data
+
+class DoctorTokenObtainPairSerializer(RoleTokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        if self.user.user_profile.role != 'doctor':
+            raise serializers.ValidationError("Вы не врач")
+        return data
+
+class DirectorTokenObtainPairSerializer(RoleTokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        if self.user.user_profile.role != 'director':
+            raise serializers.ValidationError("Вы не директор")
+        return data
+# ------------------- Профили -------------------
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
@@ -43,17 +130,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class ClientProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClientProfile
-        fields = [
-            'full_name', 'phone', 'birth_date', 'gender',
-            'address', 'about', 'is_email_verified'
-        ]
+        fields = ['full_name', 'phone', 'birth_date', 'gender', 'address', 'about', 'is_email_verified']
         read_only_fields = ['is_email_verified']
 
 
 class CurrentUserSerializer(serializers.ModelSerializer):
     user_profile = UserProfileSerializer(read_only=True)
     client_profile = ClientProfileSerializer(read_only=True)
-    doctor_profile = DoctorSerializer(source='user_profile.doctor_profile', read_only=True) # <-- ДОБАВЛЕНО
+    doctor_profile = DoctorSerializer(source='user_profile.doctor_profile', read_only=True)
 
     class Meta:
         model = CustomUser
@@ -61,43 +145,20 @@ class CurrentUserSerializer(serializers.ModelSerializer):
             'id', 'email', 'first_name', 'last_name',
             'is_active', 'is_staff', 'is_superuser',
             'date_joined', 'last_login',
-            'user_profile', 'client_profile', 'doctor_profile' # <-- ДОБАВЛЕНО
+            'user_profile', 'client_profile', 'doctor_profile'
         )
 
 
-class ResendCodeSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
-
-
-class VerifyEmailSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
-    code = serializers.CharField(required=True, max_length=6)
-
-
+# ------------------- Сериализаторы записей -------------------
 class AppointmentSerializer(serializers.ModelSerializer):
     doctor = DoctorSerializer(read_only=True)
     service = ServiceSerializer(read_only=True)
 
     class Meta:
         model = Appointment
-        fields = [
-            'id', 'doctor', 'service', 'start_time', 'end_time',
-            'status', 'notes', 'created_at', 'updated_at'
-        ]
+        fields = ['id', 'doctor', 'service', 'start_time', 'end_time', 'status', 'notes', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at', 'status']
         ref_name = 'MainAppAppointmentSerializer'
-
-
-class PaymentSerializer(serializers.ModelSerializer):
-    service = ServiceSerializer(read_only=True)
-
-    class Meta:
-        model = Payment
-        fields = [
-            'id', 'service', 'amount', 'payment_date', 'status', 'transaction_id', 'appointment'
-        ]
-        read_only_fields = ['id', 'payment_date', 'status', 'transaction_id', 'amount', 'appointment']
-        ref_name = 'MainAppPaymentSerializer'
 
 
 class AppointmentCreateSerializer(serializers.ModelSerializer):
@@ -106,16 +167,12 @@ class AppointmentCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Appointment
-        fields = [
-            'doctor', 'service', 'start_time', 'end_time', 'notes'
-        ]
+        fields = ['doctor', 'service', 'start_time', 'end_time', 'notes']
         ref_name = 'MainAppAppointmentCreateSerializer'
-
 
     def validate(self, data):
         if data['start_time'] >= data['end_time']:
             raise serializers.ValidationError("Время окончания должно быть позже времени начала.")
-
         return data
 
     def create(self, validated_data):
@@ -125,28 +182,24 @@ class AppointmentCreateSerializer(serializers.ModelSerializer):
         else:
             raise serializers.ValidationError("Только аутентифицированные пользователи с профилем клиента могут создавать записи.")
         return super().create(validated_data)
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework import serializers
-from django.contrib.auth import get_user_model
 
-User = get_user_model()
 
-class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-    role = serializers.CharField(write_only=True)
+# ------------------- Сериализатор оплаты -------------------
+class PaymentSerializer(serializers.ModelSerializer):
+    service = ServiceSerializer(read_only=True)
 
-    def validate(self, attrs):
-        email = attrs.get("email")
-        password = attrs.get("password")
+    class Meta:
+        model = Payment
+        fields = ['id', 'service', 'amount', 'payment_date', 'status', 'transaction_id', 'appointment']
+        read_only_fields = ['id', 'payment_date', 'status', 'transaction_id', 'amount', 'appointment']
+        ref_name = 'MainAppPaymentSerializer'
 
-        user = User.objects.filter(email=email).first()
-        if not user:
-            raise serializers.ValidationError("Пользователь с таким email не найден")
-        if not user.check_password(password):
-            raise serializers.ValidationError("Неверный пароль")
-        if not hasattr(user, 'user_profile'):
-            raise serializers.ValidationError("Профиль пользователя не найден")
 
-        data = super().validate(attrs)
-        data['email'] = user.email
-        return data
+# ------------------- Email verification -------------------
+class ResendCodeSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
 
+
+class VerifyEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    code = serializers.CharField(required=True, max_length=6)
