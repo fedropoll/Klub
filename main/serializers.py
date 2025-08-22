@@ -8,7 +8,31 @@ from listdoctors.serializers import DoctorSerializer
 from services.serializers import ServiceSerializer
 
 User = get_user_model()
+class BaseRoleTokenSerializer(TokenObtainPairSerializer):
+    role = None  # будем переопределять для каждой роли
 
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        if self.role and self.user.user_profile.role != self.role:
+            raise serializers.ValidationError(f"Этот токен только для {self.role}.")
+        data["role"] = self.user.user_profile.role
+        return data
+
+
+class AdminTokenSerializer(BaseRoleTokenSerializer):
+    role = "admin"
+
+
+class DirectorTokenSerializer(BaseRoleTokenSerializer):
+    role = "director"
+
+
+class DoctorTokenSerializer(BaseRoleTokenSerializer):
+    role = "doctor"
+
+
+class ClientTokenSerializer(BaseRoleTokenSerializer):
+    role = "patient"
 # ------------------- JWT для любого пользователя -------------------
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
@@ -59,67 +83,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         UserProfile.objects.update_or_create(user=user, defaults={'role': 'patient'})
         ClientProfile.objects.get_or_create(user=user)
         return user
-class RoleTokenObtainPairSerializer(TokenObtainPairSerializer):
-    def validate(self, attrs):
-        data = super().validate(attrs)
-        user_profile = self.user.user_profile  # вместо userprofile
-        data['role'] = user_profile.role
-        return data
 
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        token["role"] = user.user_profile.role if hasattr(user, "user_profile") else "unknown"
-        return token
-
-
-
-class DirectorTokenObtainPairSerializer(RoleTokenObtainPairSerializer):
-    def validate(self, attrs):
-        data = super().validate(attrs)
-        if self.user.user_profile.role != 'director':
-            raise serializers.ValidationError("Вы не директор")
-        return data
-
-
-# ------------------- Общий сериализатор с role -------------------
-class RoleTokenObtainPairSerializer(TokenObtainPairSerializer):
-    def validate(self, attrs):
-        data = super().validate(attrs)
-        # Добавляем роль в ответ
-        data['role'] = self.user.user_profile.role if hasattr(self.user, 'user_profile') else 'unknown'
-        return data
-
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        token['role'] = user.user_profile.role if hasattr(user, 'user_profile') else 'unknown'
-        return token
-
-# ------------------- Конкретные роли -------------------
-class MyTokenObtainPairSerializer(RoleTokenObtainPairSerializer):
-    pass  # Для обычных пациентов/клиентов
-
-class AdminTokenObtainPairSerializer(RoleTokenObtainPairSerializer):
-    def validate(self, attrs):
-        data = super().validate(attrs)
-        if self.user.user_profile.role != 'admin':
-            raise serializers.ValidationError("Вы не админ")
-        return data
-
-class DoctorTokenObtainPairSerializer(RoleTokenObtainPairSerializer):
-    def validate(self, attrs):
-        data = super().validate(attrs)
-        if self.user.user_profile.role != 'doctor':
-            raise serializers.ValidationError("Вы не врач")
-        return data
-
-class DirectorTokenObtainPairSerializer(RoleTokenObtainPairSerializer):
-    def validate(self, attrs):
-        data = super().validate(attrs)
-        if self.user.user_profile.role != 'director':
-            raise serializers.ValidationError("Вы не директор")
-        return data
 # ------------------- Профили -------------------
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:

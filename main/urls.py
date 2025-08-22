@@ -1,5 +1,6 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
+from .views import AdminTokenView, DirectorTokenView, DoctorTokenView, ClientTokenView
 
 from .views import (
     UserRegisterView,
@@ -22,6 +23,11 @@ urlpatterns = [
     path('appointments/', AppointmentListView.as_view(), name='appointment_list'),
     path('appointments/create/', AppointmentCreateView.as_view(), name='appointment_create'),
     path('appointments/<int:pk>/', AppointmentDetailView.as_view(), name='appointment_detail'),
+
+    path('api/token/admin/', AdminTokenView.as_view(), name='token_admin'),
+    path('api/token/director/', DirectorTokenView.as_view(), name='token_director'),
+    path('api/token/doctor/', DoctorTokenView.as_view(), name='token_doctor'),
+    path('api/token/client/', ClientTokenView.as_view(), name='token_client'),
 
     path('payments/', PaymentListView.as_view(), name='payment_list'),
     path('payments/<int:pk>/', PaymentDetailView.as_view(), name='payment_detail'),

@@ -9,9 +9,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import (
     MyTokenObtainPairSerializer,
-    AdminTokenObtainPairSerializer,
-    DoctorTokenObtainPairSerializer,
-    DirectorTokenObtainPairSerializer
+    AdminTokenSerializer, DirectorTokenSerializer, DoctorTokenSerializer,
+    ClientTokenSerializer
 )
 from .models import CustomUser, ClientProfile, EmailVerificationCode, Appointment, Payment
 from listdoctors.models import Doctor
@@ -127,17 +126,18 @@ class VerifyEmailView(GenericAPIView):
     }
 )
 
-class DirectorTokenObtainPairView(TokenObtainPairView):
-    serializer_class = DirectorTokenObtainPairSerializer
 
-class MyTokenObtainPairView(TokenObtainPairView):
-    serializer_class = MyTokenObtainPairSerializer
+class AdminTokenView(TokenObtainPairView):
+    serializer_class = AdminTokenSerializer
 
-class AdminTokenObtainPairView(TokenObtainPairView):
-    serializer_class = AdminTokenObtainPairSerializer
+class DirectorTokenView(TokenObtainPairView):
+    serializer_class = DirectorTokenSerializer
 
-class DoctorTokenObtainPairView(TokenObtainPairView):
-    serializer_class = DoctorTokenObtainPairSerializer
+class DoctorTokenView(TokenObtainPairView):
+    serializer_class = DoctorTokenSerializer
+
+class ClientTokenView(TokenObtainPairView):
+    serializer_class = ClientTokenSerializer
 
 class ResendVerificationCodeView(GenericAPIView):
     permission_classes = [permissions.AllowAny]
@@ -156,11 +156,6 @@ class ResendVerificationCodeView(GenericAPIView):
         except CustomUser.DoesNotExist:
             return Response({'detail': 'Пользователь не найден.'}, status=status.HTTP_404_NOT_FOUND)
 
-
-@swagger_auto_schema(
-    responses={200: CurrentUserSerializer},
-    request_body=CurrentUserSerializer
-)
 class CurrentUserView(generics.RetrieveUpdateAPIView):
     serializer_class = CurrentUserSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -254,5 +249,3 @@ class PaymentDetailView(generics.RetrieveAPIView):
         return Payment.objects.none()
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-class MyTokenObtainPairView(TokenObtainPairView):
-    serializer_class = MyTokenObtainPairSerializer
