@@ -13,13 +13,13 @@ def main():
     from django.contrib.auth import get_user_model
     User = get_user_model()
 
-    # Создаем суперпользователя, если его нет
-    if not User.objects.filter(email="admin@example.com").exists():
-        User.objects.create_superuser(
-            email="admin@example.com",
-            password="admin1234",
-            username="admin"
-        )
+    # # Создаем суперпользователя, если его нет
+    # if not User.objects.filter(email="admin@example.com").exists():
+    #     User.objects.create_superuser(
+    #         email="admin@example.com",
+    #         password="admin1234",
+    #         username="admin"
+    #     )
 
     try:
         from django.core.management import execute_from_command_line
