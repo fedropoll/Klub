@@ -7,6 +7,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+# DEBUG = True
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key')
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
@@ -14,15 +18,30 @@ ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', 'localhost,
 if DEBUG:
     ALLOWED_HOSTS = ['*']
 
-# DATABASES
 DATABASE_URL = os.getenv('DATABASE_URL')
+
 if DATABASE_URL:
     if DATABASE_URL.startswith('postgres://'):
         DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
-    DATABASES = {
-        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
-    }
+    try:
+        DATABASES = {
+            'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
+        }
+        from django.db import connections
+        conn = connections['default']
+        conn.cursor()
+        print("Successful database connection to PostgreSQL")
+    except Exception as e:
+        print(f"Database connection error to PostgreSQL: {e}")
+        print("Using SQLite as fallback")
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
 else:
+    print("DATABASE_URL not set, using SQLite by default")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -30,15 +49,6 @@ else:
         }
     }
 
-# Проверка соединения (для дебага)
-try:
-    from django.db import connections
-    connections['default'].cursor()
-    print("Successful database connection to PostgreSQL")
-except Exception as e:
-    print(f"Database connection error: {e}, using SQLite as fallback")
-
-# Apps
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -77,6 +87,20 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'safe.urls'
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'ERROR',
+    },
+}
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -102,6 +126,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
+
 LANGUAGE_CODE = 'ru'
 TIME_ZONE = 'Asia/Bishkek'
 USE_I18N = True
@@ -114,7 +139,6 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -126,6 +150,7 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
     'EXCEPTION_HANDLER': 'safe.custom_exception_handler.custom_exception_handler',
+
 }
 
 SIMPLE_JWT = {
@@ -138,24 +163,22 @@ SIMPLE_JWT = {
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-# Email
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'arstanbekovasil10@gmail.com')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD', 'ffbaxdilmebrolbj')
 
-# Twilio
+# Настройки для Twilio (для WhatsApp и SMS)
 TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
 TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
 TWILIO_WHATSAPP_NUMBER = os.getenv('TWILIO_WHATSAPP_NUMBER')
-TWILIO_SMS_NUMBER = os.getenv('TWILIO_SMS_NUMBER')
+TWILIO_SMS_NUMBER = os.getenv('TWILIO_SMS_NUMBER')  # <-- НОВЫЙ НОМЕР ДЛЯ SMS
 
-# Telegram
+# Настройки для Telegram Bot API
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 
-# Swagger
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
         'Bearer': {
@@ -168,6 +191,5 @@ SWAGGER_SETTINGS = {
     'USE_SESSION_AUTH': False,
     'PERSIST_AUTH': True,
 }
-
 AUTH_USER_MODEL = 'main.CustomUser'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
