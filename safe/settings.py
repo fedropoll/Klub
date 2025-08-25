@@ -23,24 +23,15 @@ DATABASE_URL = os.getenv('DATABASE_URL')
 if DATABASE_URL:
     if DATABASE_URL.startswith('postgres://'):
         DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
-    try:
-        DATABASES = {
-            'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
-        }
-        from django.db import connections
-        conn = connections['default']
-        conn.cursor()
-        print("Successful database connection to PostgreSQL")
-    except Exception as e:
-        print(f"Database connection error to PostgreSQL: {e}")
-        print("Using SQLite as fallback")
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
-            }
-        }
-
+    DATABASES = {
+        'default': dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=True  # обязательно для Render
+        )
+    }
+else:
+    raise ValueError("DATABASE_URL не задан в environment variables")
 
 INSTALLED_APPS = [
     'django.contrib.admin',
