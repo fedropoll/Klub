@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
@@ -6,20 +5,23 @@ import sys
 def main():
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'safe.settings')
 
-    # Импорт и работа с Django должна быть здесь, после установки DJANGO_SETTINGS_MODULE
     import django
-    django.setup()  # важный вызов — инициализирует всё для работы с ORM
+    django.setup()
 
-    from django.contrib.auth import get_user_model
-    User = get_user_model()
+    from main.models import CustomUser
 
-    # # Создаем суперпользователя, если его нет
-    # if not User.objects.filter(email="admin@example.com").exists():
-    #     User.objects.create_superuser(
-    #         email="admin@example.com",
-    #         password="admin1234",
-    #         username="admin"
-    #     )
+    # Создаем суперпользователя admin с ролью 'admin', если его нет
+    try:
+        user = CustomUser.objects.get(email="admin@gmail.com")
+    except CustomUser.DoesNotExist:
+        user = CustomUser.objects.create_superuser(
+            email="admin@gmail.com",
+            password="admin",
+            username="admin"
+        )
+    if user.user_profile.role != 'admin':
+        user.user_profile.role = 'admin'
+        user.user_profile.save()
 
     try:
         from django.core.management import execute_from_command_line
