@@ -18,20 +18,19 @@ ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', 'localhost,
 if DEBUG:
     ALLOWED_HOSTS = ['*']
 
+
 DATABASE_URL = os.getenv('DATABASE_URL')
 
-if DATABASE_URL:
-    if DATABASE_URL.startswith('postgres://'):
-        DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
-    DATABASES = {
-        'default': dj_database_url.parse(
-            DATABASE_URL,
-            conn_max_age=600,
-            ssl_require=True  # обязательно для Render
-        )
-    }
-else:
-    raise ValueError("DATABASE_URL не задан в environment variables")
+if DATABASE_URL.startswith('postgres://'):
+    DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+
+DATABASES = {
+    'default': dj_database_url.parse(
+        DATABASE_URL,
+        conn_max_age=600,
+        ssl_require=False
+    )
+}
 
 INSTALLED_APPS = [
     'django.contrib.admin',
