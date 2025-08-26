@@ -5,24 +5,6 @@ import sys
 def main():
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'safe.settings')
 
-    import django
-    django.setup()
-
-    from main.models import CustomUser
-
-    # Создаем суперпользователя admin с ролью 'admin', если его нет
-    try:
-        user = CustomUser.objects.get(email="admin@gmail.com")
-    except CustomUser.DoesNotExist:
-        user = CustomUser.objects.create_superuser(
-            email="admin@gmail.com",
-            password="admin",
-            username="admin"
-        )
-    if user.user_profile.role != 'admin':
-        user.user_profile.role = 'admin'
-        user.user_profile.save()
-
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

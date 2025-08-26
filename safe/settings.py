@@ -2,10 +2,13 @@ import os
 from datetime import timedelta
 from pathlib import Path
 import dj_database_url
+from django.core.wsgi import get_wsgi_application
 from dotenv import load_dotenv
 
 load_dotenv()
 
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'safe.settings')
+application = get_wsgi_application()
 BASE_DIR = Path(__file__).resolve().parent.parent
 # DEBUG = True
 
@@ -14,7 +17,11 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key')
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')]
+DEBUG = True
+
+
+ALLOWED_HOSTS = ['*']
+
 if DEBUG:
     ALLOWED_HOSTS = ['*']
 DATABASES = {
@@ -30,6 +37,9 @@ DATABASES = {
         },
     }
 }
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
 
 DATABASE_URL = os.getenv('DATABASE_URL')
