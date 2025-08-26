@@ -9,14 +9,14 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DJANGO_SETTINGS_MODULE=safe.settings
-      - DEBUG=False
-      - SECRET_KEY=admin88asilbek88
-      - DB_NAME=safe_clinic
-      - DB_USER=admin
-      - DB_PASSWORD=admin123
-      - DB_HOST=db
-      - DB_PORT=5432
+      DJANGO_SETTINGS_MODULE: safe.settings
+      DEBUG: "False"
+      SECRET_KEY: admin88asilbek88
+      DB_NAME: safe_clinic
+      DB_USER: admin
+      DB_PASSWORD: admin123
+      DB_HOST: db
+      DB_PORT: 5432
     depends_on:
       - db
 
