@@ -1,18 +1,24 @@
-# Используем официальный образ Python
+# Используем официальный Python
 FROM python:3.10-slim
 
+# Рабочая директория
 WORKDIR /app
 
 # Копируем зависимости
 COPY requirements.txt .
 
+# Устанавливаем зависимости
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копируем проект
+# Копируем весь проект
 COPY . .
 
-# Открываем порт для Django
-EXPOSE 8000
+# Выполняем миграции и сборку статики
+RUN python manage.py migrate
+RUN python manage.py collectstatic --noinput
 
-# Команда запуска Django через Gunicorn
-CMD ["gunicorn", "safe.wsgi:application", "--bind", "0.0.0.0:8000"]
+# Открываем порт
+EXPOSE 8080
+
+# Команда запуска
+CMD ["gunicorn", "safe.wsgi:application", "--bind", "0.0.0.0:8080"]
