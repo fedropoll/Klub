@@ -6,8 +6,6 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
 
-
-
 schema_view = get_schema_view(
     openapi.Info(
         title="API Клиники Safe v1",
@@ -28,11 +26,8 @@ urlpatterns = [
     path('list_patients/', include('listpatients.urls')),
     path('branches/', include('branch.urls')),
     path('appointments/', include('appointments.urls')),
-    path('analytics/', include('data_analytics.urls')), # <-- ДОБАВЛЕНО
-
+    path('analytics/', include('data_analytics.urls')),
     path('', include('main.urls')),
-
-
 
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),

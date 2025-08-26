@@ -2,6 +2,7 @@
 import os
 import sys
 
+
 def main():
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'safe.settings')
 
@@ -15,6 +16,8 @@ def main():
         ) from exc
 
     execute_from_command_line(sys.argv)
+
+print(os.environ.get('DJANGO_SETTINGS_MODULE'))
 
 if __name__ == '__main__':
     main()
