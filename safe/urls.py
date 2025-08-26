@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.http.response import HttpResponse
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
@@ -17,7 +18,11 @@ schema_view = get_schema_view(
     permission_classes=[permissions.AllowAny],
 )
 
+def home(request):
+    return HttpResponse("Hello, Safe Clinic!")
+
 urlpatterns = [
+    path('', home),
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
 
