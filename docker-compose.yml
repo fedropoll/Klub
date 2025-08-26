@@ -1,14 +1,13 @@
 version: "3.9"
 services:
   web:
-    environment:
-      - DJANGO_SETTINGS_MODULE=safe.settings
     build: .
     command: gunicorn safe.wsgi:application --bind 0.0.0.0:8000
-    volumes:
-      - .:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=safe.settings
+      - DATABASE_URL=postgresql://admin:admin123@db:5432/safe_clinic
     ports:
-      - "8000:8000"  # внешний порт:внутренний порт
+      - "8000:8000"
     depends_on:
       - db
 
