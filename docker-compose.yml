@@ -6,30 +6,23 @@ services:
     command: gunicorn safe.wsgi:application --bind 0.0.0.0:8000
     volumes:
       - .:/app
+      - media_volume:/app/media
     ports:
       - "8000:8000"
-    environment:
-      DJANGO_SETTINGS_MODULE: safe.settings
-      DEBUG: "False"
-      SECRET_KEY: admin88asilbek88
-      DB_NAME: safe_clinic
-      DB_USER: admin
-      DB_PASSWORD: admin123
-      DB_HOST: db
-      DB_PORT: 5432
     depends_on:
       - db
+    env_file:
+      - .env
 
   db:
     image: postgres:15
     environment:
-      POSTGRES_DB: safe_clinic
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin123
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
 volumes:
   postgres_data:
+  media_volume:

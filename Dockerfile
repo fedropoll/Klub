@@ -1,36 +1,30 @@
-# Используем официальный Python
-FROM python:3.10-slim
+# Используем Python 3.11 slim
+FROM python:3.11-slim
 
-# Рабочая директория
+# Создаем рабочую директорию
 WORKDIR /app
 
-# Копируем зависимости
+# Устанавливаем зависимости системы
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Копируем зависимости проекта
 COPY requirements.txt .
 
-# Устанавливаем зависимости
-RUN pip install --no-cache-dir -r requirements.txt
+# Устанавливаем pip-зависимости
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
 
 # Копируем весь проект
 COPY . .
 
-# Выполняем миграции и сборку статики
-RUN python manage.py migrate
-RUN python manage.py collectstatic --noinput
+# Создаем папку для медиа
+RUN mkdir -p /app/media
 
 # Открываем порт
-EXPOSE 8080
-
-# Команда запуска
-CMD ["gunicorn", "safe.wsgi:application", "--bind", "0.0.0.0:8080"]
-FROM python:3.10-slim
-
-WORKDIR /app
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-
 EXPOSE 8000
 
+# Команда запуска
 CMD ["gunicorn", "safe.wsgi:application", "--bind", "0.0.0.0:8000"]
