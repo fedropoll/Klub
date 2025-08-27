@@ -22,13 +22,28 @@ class BaseRoleTokenSerializer(TokenObtainPairSerializer):
 
 class AdminTokenSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
-        user = CustomUser.objects.filter(email=attrs['email']).first()
-        if not user:
+        # Сначала проверим, есть ли email и password
+        email = attrs.get('email')
+        password = attrs.get('password')
+
+        if not email or not password:
+            raise serializers.ValidationError("Нужно указать email и пароль")
+
+        # Проверяем, есть ли пользователь
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
             raise serializers.ValidationError("Пользователь не найден")
-        if not user.check_password(attrs['password']):
+
+        # Проверка пароля
+        if not user.check_password(password):
             raise serializers.ValidationError("Неверный пароль")
+
+        # Проверка суперпользователя
         if not user.is_superuser:
-            raise serializers.ValidationError("Пользователь не является администратором")
+            raise serializers.ValidationError("Нет прав администратора")
+
+        # Если всё ок — генерируем токен
         data = super().validate(attrs)
         data['email'] = user.email
         data['role'] = 'admin'

@@ -24,7 +24,7 @@ urlpatterns = [
     path('appointments/create/', AppointmentCreateView.as_view(), name='appointment_create'),
     path('appointments/<int:pk>/', AppointmentDetailView.as_view(), name='appointment_detail'),
 
-    path('api/token/admin/', AdminTokenView.as_view(), name='token_admin'),
+    path('api/token/admin/', AdminTokenView.as_view(), name='admin_token'),
     path('api/token/director/', DirectorTokenView.as_view(), name='token_director'),
     path('api/token/doctor/', DoctorTokenView.as_view(), name='token_doctor'),
     path('api/token/client/', ClientTokenView.as_view(), name='token_client'),
