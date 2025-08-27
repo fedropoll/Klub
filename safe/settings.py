@@ -11,7 +11,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'fallback-key')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", ".railway.app"]
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+
 
 
 
@@ -41,7 +42,6 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key')
 
 
 
-ALLOWED_HOSTS = ['safeclinic-production.up.railway.app']
 
 
 INSTALLED_APPS = [

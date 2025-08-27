@@ -9,4 +9,4 @@ class BranchViewSet(viewsets.ModelViewSet):
 
     queryset = Branch.objects.all()
     serializer_class = BranchSerializer
-    permission_classes = [ReadOnlyOrAdminOrDirector] # Reading for all, writing for admin/director
+    permission_classes = [ReadOnlyOrAdminOrDirector]

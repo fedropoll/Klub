@@ -7,10 +7,11 @@ from django.utils import timezone
 from datetime import timedelta
 
 from main.models import Payment, Appointment, ClientProfile # Импортируем модели из main
+from .permissions import IsAdminDoctorOrDirector
 from .serializers import AnalyticsDashboardSerializer
 
 class AnalyticsDashboardView(APIView):
-    permission_classes = [permissions.IsAdminUser] # Только для администраторов или директоров
+    permission_classes = [IsAdminDoctorOrDirector] # Только для администраторов или директоров
 
     def get(self, request):
         end_date = timezone.now()
