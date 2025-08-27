@@ -10,22 +10,24 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'fallback-key')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
-ALLOWED_HOSTS = [
-    '127.0.0.1',
-    'localhost',
-    'safeclinic-production.up.railway.app'
-]
+
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", ".railway.app"]
+
 
 
 
 
 DATABASES = {
-    'default': dj_database_url.parse(
-        os.getenv('DATABASE_URL'),
-        conn_max_age=600,
-        ssl_require=True  # если требуется SSL
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'safe_clinic',
+        'USER': 'postgres',
+        'PASSWORD': 'твой_пароль',
+        'HOST': '127.0.0.1',
+        'PORT': '5433',
+    }
 }
+
 
 DATABASE_URL = os.getenv('DATABASE_URL')
 
