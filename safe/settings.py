@@ -11,12 +11,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'fallback-key')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
-
-
-
-
-
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1").split(",")
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 DATABASES = {
     'default': {
@@ -159,12 +155,12 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# CSRF settings
-CSRF_TRUSTED_ORIGINS = [
+CORS_ALLOWED_ORIGINS = [
     'https://safeclinic-production.up.railway.app',
-    'http://localhost:3000',  # For local development
-    'http://127.0.0.1:3000',  # For local development
+    'http://localhost:3000',
 ]
+CSRF_TRUSTED_ORIGINS = ['https://safeclinic-production.up.railway.app']
+
 
 # Security settings for production
 if not DEBUG:
