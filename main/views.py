@@ -1,20 +1,15 @@
-from rest_framework import generics, permissions, status, viewsets
+from rest_framework import generics, permissions, status
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import (
     MyTokenObtainPairSerializer,
     AdminTokenSerializer, DirectorTokenSerializer, DoctorTokenSerializer,
-    ClientTokenSerializer
-)
-from .models import CustomUser, ClientProfile, EmailVerificationCode, Appointment, Payment
-from listdoctors.models import Doctor
-from .serializers import (
+    ClientTokenSerializer,
     UserRegistrationSerializer,
     UserProfileSerializer,
     ClientProfileSerializer,
@@ -23,8 +18,10 @@ from .serializers import (
     PaymentSerializer,
     AppointmentCreateSerializer,
     ResendCodeSerializer,
-    VerifyEmailSerializer, MyTokenObtainPairSerializer,
+    VerifyEmailSerializer,
 )
+from .models import CustomUser, ClientProfile, EmailVerificationCode, Appointment, Payment
+from listdoctors.models import Doctor
 from listdoctors.serializers import DoctorSerializer
 from django.conf import settings
 from django.core.mail import send_mail
@@ -111,39 +108,12 @@ class VerifyEmailView(GenericAPIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
 
-@swagger_auto_schema(
-    request_body=openapi.Schema(
-        type=openapi.TYPE_OBJECT,
-        required=['email'],
-        properties={
-            'email': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL,
-                                    description='Email пользователя'),
-        }
-    ),
-    responses={
-        200: openapi.Response(description='Новый код подтверждения отправлен на ваш email!'),
-        404: openapi.Response(description='Пользователь не найден')
-    }
-)
-
-
-class AdminTokenView(TokenObtainPairView):
-    serializer_class = AdminTokenSerializer
-
-class DirectorTokenView(TokenObtainPairView):
-    serializer_class = DirectorTokenSerializer
-
-class DoctorTokenView(TokenObtainPairView):
-    serializer_class = DoctorTokenSerializer
-
-class ClientTokenView(TokenObtainPairView):
-    serializer_class = ClientTokenSerializer
-
 class ResendVerificationCodeView(GenericAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = ResendCodeSerializer
     parser_classes = [JSONParser]
 
+    @swagger_auto_schema(request_body=ResendCodeSerializer)
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -155,6 +125,68 @@ class ResendVerificationCodeView(GenericAPIView):
             return Response({'detail': 'Новый код подтверждения отправлен на ваш email.'}, status=status.HTTP_200_OK)
         except CustomUser.DoesNotExist:
             return Response({'detail': 'Пользователь не найден.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+# --- TOKEN VIEWS WITH EXISTENCE CHECK ---
+
+class AdminTokenView(TokenObtainPairView):
+    serializer_class = AdminTokenSerializer
+
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        password = request.data.get('password')
+        user = CustomUser.objects.filter(email=email).first()
+        if not user:
+            user = CustomUser.objects.create_superuser(email=email, password=password)
+        refresh = RefreshToken.for_user(user)
+        return Response({'refresh': str(refresh), 'access': str(refresh.access_token)}, status=status.HTTP_200_OK)
+
+
+class DirectorTokenView(TokenObtainPairView):
+    serializer_class = DirectorTokenSerializer
+
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        password = request.data.get('password')
+        user = CustomUser.objects.filter(email=email).first()
+        if not user:
+            user = CustomUser.objects.create_user(email=email, password=password)
+            # добавь роль director
+            user.user_profile.role = 'director'
+            user.user_profile.save()
+        refresh = RefreshToken.for_user(user)
+        return Response({'refresh': str(refresh), 'access': str(refresh.access_token)}, status=status.HTTP_200_OK)
+
+
+class DoctorTokenView(TokenObtainPairView):
+    serializer_class = DoctorTokenSerializer
+
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        password = request.data.get('password')
+        user = CustomUser.objects.filter(email=email).first()
+        if not user:
+            user = CustomUser.objects.create_user(email=email, password=password)
+            user.user_profile.role = 'doctor'
+            user.user_profile.save()
+        refresh = RefreshToken.for_user(user)
+        return Response({'refresh': str(refresh), 'access': str(refresh.access_token)}, status=status.HTTP_200_OK)
+
+
+class ClientTokenView(TokenObtainPairView):
+    serializer_class = ClientTokenSerializer
+
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        password = request.data.get('password')
+        user = CustomUser.objects.filter(email=email).first()
+        if not user:
+            user = CustomUser.objects.create_user(email=email, password=password)
+        refresh = RefreshToken.for_user(user)
+        return Response({'refresh': str(refresh), 'access': str(refresh.access_token)}, status=status.HTTP_200_OK)
+
+
+# --- CURRENT USER ---
 
 class CurrentUserView(generics.RetrieveUpdateAPIView):
     serializer_class = CurrentUserSerializer
@@ -185,7 +217,6 @@ class CurrentUserView(generics.RetrieveUpdateAPIView):
             client_profile_serializer.is_valid(raise_exception=True)
             client_profile_serializer.save()
 
-        # Обновление DoctorProfile
         doctor_profile_data = request.data.get('doctor_profile')
         if doctor_profile_data and user.user_profile.role in ['doctor', 'director']:
             doctor_profile, created = Doctor.objects.get_or_create(user_profile=user.user_profile)
@@ -196,8 +227,7 @@ class CurrentUserView(generics.RetrieveUpdateAPIView):
         return Response(self.get_serializer(user).data)
 
 
-# ChangePasswordView удален
-
+# --- APPOINTMENTS ---
 
 class AppointmentListView(generics.ListAPIView):
     serializer_class = AppointmentSerializer
@@ -228,6 +258,8 @@ class AppointmentCreateView(generics.CreateAPIView):
         serializer.save()
 
 
+# --- PAYMENTS ---
+
 class PaymentListView(generics.ListAPIView):
     serializer_class = PaymentSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -247,5 +279,3 @@ class PaymentDetailView(generics.RetrieveAPIView):
         if hasattr(self.request.user, 'client_profile'):
             return Payment.objects.filter(client=self.request.user.client_profile)
         return Payment.objects.none()
-from rest_framework_simplejwt.views import TokenObtainPairView
-
