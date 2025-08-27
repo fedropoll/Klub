@@ -129,18 +129,20 @@ class ResendVerificationCodeView(GenericAPIView):
 
 # --- TOKEN VIEWS WITH EXISTENCE CHECK ---
 
+# class AdminTokenView(TokenObtainPairView):
+#     serializer_class = AdminTokenSerializer
+#
+#     def post(self, request, *args, **kwargs):
+#         email = request.data.get('email')
+#         password = request.data.get('password')
+#         user = CustomUser.objects.filter(email=email).first()
+#         if not user:
+#             user = CustomUser.objects.create_superuser(email=email, password=password)
+#         refresh = RefreshToken.for_user(user)
+#         return Response({'refresh': str(refresh), 'access': str(refresh.access_token)}, status=status.HTTP_200_OK)
+
 class AdminTokenView(TokenObtainPairView):
     serializer_class = AdminTokenSerializer
-
-    def post(self, request, *args, **kwargs):
-        email = request.data.get('email')
-        password = request.data.get('password')
-        user = CustomUser.objects.filter(email=email).first()
-        if not user:
-            user = CustomUser.objects.create_superuser(email=email, password=password)
-        refresh = RefreshToken.for_user(user)
-        return Response({'refresh': str(refresh), 'access': str(refresh.access_token)}, status=status.HTTP_200_OK)
-
 
 class DirectorTokenView(TokenObtainPairView):
     serializer_class = DirectorTokenSerializer

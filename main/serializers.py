@@ -19,8 +19,20 @@ class BaseRoleTokenSerializer(TokenObtainPairSerializer):
         return data
 
 
-class AdminTokenSerializer(BaseRoleTokenSerializer):
-    role = "admin"
+
+class AdminTokenSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        user = CustomUser.objects.filter(email=attrs['email']).first()
+        if not user:
+            raise serializers.ValidationError("Пользователь не найден")
+        if not user.check_password(attrs['password']):
+            raise serializers.ValidationError("Неверный пароль")
+        if not user.is_superuser:
+            raise serializers.ValidationError("Пользователь не является администратором")
+        data = super().validate(attrs)
+        data['email'] = user.email
+        data['role'] = 'admin'
+        return data
 
 
 class DirectorTokenSerializer(BaseRoleTokenSerializer):
