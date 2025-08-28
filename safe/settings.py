@@ -18,10 +18,13 @@ ALLOWED_HOSTS = [
 ]
 PORT = os.environ.get('PORT', 8000)  # 8000 как fallback на локале
 
-
 CSRF_TRUSTED_ORIGINS = [
     "https://safeclinic-production.up.railway.app",
 ]
+
+CORS_ALLOW_ALL_ORIGINS = True
+
+
 # Отключаем SSL для dev
 SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
@@ -37,9 +40,6 @@ DATABASES = {
     )
 }
 
-# CORS
-CORS_ALLOW_ALL_ORIGINS = True
-CSRF_TRUSTED_ORIGINS = []
 
 # JWT
 SIMPLE_JWT = {
@@ -117,16 +117,17 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # REST Framework
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
-    "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.AllowAny",
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'main.authentication.NoBearerJWTAuthentication',
     ],
-    "DEFAULT_FILTER_BACKENDS": (
-        "django_filters.rest_framework.DjangoFilterBackend",
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
     ),
 }
+
 
 # Пользовательская модель
 AUTH_USER_MODEL = "main.CustomUser"
