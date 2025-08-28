@@ -1,22 +1,29 @@
 import os
 from pathlib import Path
+from datetime import timedelta
 from dotenv import load_dotenv
 import dj_database_url
-from datetime import timedelta
 
-load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Основные настройки
-DEBUG = os.getenv("DEBUG", "False") == "True"
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
+# Выбираем .env файл
+ENV_FILE = ".env.local"
+if os.getenv("RAILWAY_ENVIRONMENT"):
+    ENV_FILE = ".env.production"
 
+load_dotenv(BASE_DIR / ENV_FILE)
+
+# Основные настройки
+DEBUG = os.getenv("DEBUG", "True") == "True"
+SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-secret")
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+
+# База данных
 DATABASES = {
-    "default": dj_database_url.parse(os.getenv("DATABASE_URL"))
+    "default": dj_database_url.config(default=os.getenv("DATABASE_URL"))
 }
 
-
+# Приложения
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -40,7 +47,6 @@ INSTALLED_APPS = [
     'data_analytics',
 ]
 
-# Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -97,15 +103,14 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # CORS и CSRF
 if DEBUG:
-    CORS_ALLOW_ALL_ORIGINS = True  # локально разрешаем всё
+    CORS_ALLOW_ALL_ORIGINS = True
     CSRF_TRUSTED_ORIGINS = []
 else:
     CORS_ALLOW_ALL_ORIGINS = False
     CORS_ALLOWED_ORIGINS = ['https://safeclinic-production.up.railway.app']
     CSRF_TRUSTED_ORIGINS = ['https://safeclinic-production.up.railway.app']
 
-# HTTPS настройки (только на проде)
-# HTTPS только на проде
+# HTTPS настройки
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
@@ -116,7 +121,7 @@ else:
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
 
-# REST Framework и JWT
+# REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -129,26 +134,7 @@ REST_FRAMEWORK = {
     ),
 }
 
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'level': 'WARNING',  # INFO/DEBUG — отключаем
-        },
-    },
-    'loggers': {
-        'django.db.backends': {
-            'handlers': ['console'],
-            'level': 'WARNING',  # показываем только предупреждения и ошибки
-            'propagate': False,
-        },
-    },
-}
-
-
+# JWT
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('ACCESS_TOKEN_LIFETIME', 60))),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.getenv('REFRESH_TOKEN_LIFETIME', 7))),
