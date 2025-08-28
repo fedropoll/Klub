@@ -11,6 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'fallback-key')
 DEBUG = True
 ALLOWED_HOSTS = ['*']
+PORT = int(os.environ.get("PORT", 8000))
 
 DATABASES = {
     'default': dj_database_url.config(
