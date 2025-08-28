@@ -14,9 +14,11 @@ DEBUG = False  # всегда True для dev
 ALLOWED_HOSTS = ['safeclinic-production.up.railway.app']
 
 PORT = os.environ.get('PORT', 8000)  # 8000 как fallback на локале
-
+CORS_ALLOWED_ORIGINS = [
+    "https://safeclinic-production.up.railway.app",
+]
 # Отключаем SSL для dev
-SECURE_SSL_REDIRECT = False
+SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 
@@ -75,6 +77,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+MIDDLEWARE = ['corsheaders.middleware.CorsMiddleware'] + MIDDLEWARE
 
 ROOT_URLCONF = "safe.urls"
 
