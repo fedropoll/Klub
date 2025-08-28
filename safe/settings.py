@@ -8,19 +8,15 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Основные настройки
-SECRET_KEY = os.getenv('SECRET_KEY', 'fallback-key')
-DEBUG = True
-ALLOWED_HOSTS = ['*']
-PORT = int(os.environ.get("PORT", 8000))
+DEBUG = os.getenv("DEBUG", "False") == "True"
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default=os.getenv("DATABASE_URL"),
-        conn_max_age=600,
-        ssl_require=False
-    )
+    "default": dj_database_url.parse(os.getenv("DATABASE_URL"))
 }
-# Приложения
+
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
