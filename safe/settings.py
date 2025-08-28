@@ -14,7 +14,7 @@ load_dotenv(BASE_DIR / ENV_FILE)
 
 DEBUG = os.getenv("DEBUG", "True") == "True"
 SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-secret")
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1").split(",")
+ALLOWED_HOSTS = ["safeclinic-production.up.railway.app"]
 
 
 DATABASES = {
