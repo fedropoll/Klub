@@ -128,6 +128,17 @@ REST_FRAMEWORK = {
     ),
 }
 
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'JWT': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': "Введите только токен без Bearer"
+        }
+    },
+    'USE_SESSION_AUTH': False,  # отключает Basic Auth
+}
 
 # Пользовательская модель
 AUTH_USER_MODEL = "main.CustomUser"
