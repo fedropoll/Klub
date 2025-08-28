@@ -10,7 +10,10 @@ load_dotenv(BASE_DIR / ".env.local")
 # Основные настройки
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key")
 DEBUG = False  # всегда True для dev
+# ALLOWED_HOSTS = ['safeclinic-production.up.railway.app', '127.0.0.1', 'localhost']
 ALLOWED_HOSTS = ['safeclinic-production.up.railway.app']
+
+PORT = int(os.environ.get("PORT", 8000))
 
 # Отключаем SSL для dev
 SECURE_SSL_REDIRECT = False
