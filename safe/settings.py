@@ -13,7 +13,7 @@ DEBUG = False  # всегда True для dev
 # ALLOWED_HOSTS = ['safeclinic-production.up.railway.app', '127.0.0.1', 'localhost']
 ALLOWED_HOSTS = ['safeclinic-production.up.railway.app']
 
-PORT = int(os.environ.get("PORT", 8000))
+PORT = os.environ.get('PORT', 8000)  # 8000 как fallback на локале
 
 # Отключаем SSL для dev
 SECURE_SSL_REDIRECT = False
