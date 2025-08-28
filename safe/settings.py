@@ -17,9 +17,7 @@ load_dotenv(BASE_DIR / ENV_FILE)
 DEBUG = os.getenv("DEBUG", "True") == "True"
 SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-secret")
 ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
-PORT = os.getenv("PORT", 8000)
-
-# База данных
+PORT = os.getenv("PORT")  # не ставим значение по умолчанию
 DATABASES = {
     "default": dj_database_url.config(default=os.getenv("DATABASE_URL"))
 }
