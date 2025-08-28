@@ -127,20 +127,8 @@ class ResendVerificationCodeView(GenericAPIView):
             return Response({'detail': 'Пользователь не найден.'}, status=status.HTTP_404_NOT_FOUND)
 
 
-# --- TOKEN VIEWS WITH EXISTENCE CHECK ---
-
-# class AdminTokenView(TokenObtainPairView):
-#     serializer_class = AdminTokenSerializer
-#
-#     def post(self, request, *args, **kwargs):
-#         email = request.data.get('email')
-#         password = request.data.get('password')
-#         user = CustomUser.objects.filter(email=email).first()
-#         if not user:
-#             user = CustomUser.objects.create_superuser(email=email, password=password)
-#         refresh = RefreshToken.for_user(user)
-#         return Response({'refresh': str(refresh), 'access': str(refresh.access_token)}, status=status.HTTP_200_OK)
-
+class AdminTokenObtainPairView(TokenObtainPairView):
+    serializer_class = AdminTokenObtainPairSerializer
 
 class DirectorTokenView(TokenObtainPairView):
     serializer_class = DirectorTokenSerializer
@@ -157,10 +145,6 @@ class DirectorTokenView(TokenObtainPairView):
         refresh = RefreshToken.for_user(user)
         return Response({'refresh': str(refresh), 'access': str(refresh.access_token)}, status=status.HTTP_200_OK)
 
-
-
-class AdminTokenObtainPairView(TokenObtainPairView):
-    serializer_class = AdminTokenObtainPairSerializer
 
 class DoctorTokenView(TokenObtainPairView):
     serializer_class = DoctorTokenSerializer

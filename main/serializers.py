@@ -6,6 +6,7 @@ from services.models import Service
 from listdoctors.serializers import DoctorSerializer
 from services.serializers import ServiceSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 class BaseRoleTokenSerializer(TokenObtainPairSerializer):
@@ -21,16 +22,34 @@ class BaseRoleTokenSerializer(TokenObtainPairSerializer):
 
 
 
-class AdminTokenObtainPairSerializer(TokenObtainPairSerializer):
+
+class AdminTokenObtainPairSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
     def validate(self, attrs):
-        data = super().validate(attrs)
-        user = self.user
-        if not getattr(user, 'userprofile', None) or user.userprofile.role != 'admin':
-            from rest_framework.exceptions import AuthenticationFailed
-            raise AuthenticationFailed('Пользователь не админ')
-        data['email'] = user.email
-        data['role'] = user.userprofile.role
-        return data
+        email = attrs.get("email")
+        password = attrs.get("password")
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("Пользователь не найден")
+
+        if not user.check_password(password):
+            raise serializers.ValidationError("Неверный пароль")
+
+        # Проверяем роль
+        profile = UserProfile.objects.get(user=user)
+        if profile.role.lower() != "admin":
+            raise serializers.ValidationError("Пользователь не админ")
+
+        refresh = RefreshToken.for_user(user)
+        return {
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+        }
+
 
 
 class DirectorTokenSerializer(BaseRoleTokenSerializer):
