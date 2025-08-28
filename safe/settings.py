@@ -6,22 +6,20 @@ import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Выбираем .env файл
 ENV_FILE = ".env.local"
 if os.getenv("RAILWAY_ENVIRONMENT"):
     ENV_FILE = ".env.production"
 
 load_dotenv(BASE_DIR / ENV_FILE)
 
-# Основные настройки
 DEBUG = os.getenv("DEBUG", "True") == "True"
 SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-secret")
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
-PORT = os.getenv("PORT")  # не ставим значение по умолчанию
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1").split(",")
+
+
 DATABASES = {
     "default": dj_database_url.config(default=os.getenv("DATABASE_URL"))
 }
-
 # Приложения
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -92,7 +90,6 @@ TIME_ZONE = 'Asia/Bishkek'
 USE_I18N = True
 USE_TZ = True
 
-# Статика и медиа
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
@@ -109,17 +106,11 @@ else:
     CORS_ALLOWED_ORIGINS = ['https://safeclinic-production.up.railway.app']
     CSRF_TRUSTED_ORIGINS = ['https://safeclinic-production.up.railway.app']
 
-# HTTPS настройки
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-else:
-    SECURE_SSL_REDIRECT = False
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SECURE = False
-
 # REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
