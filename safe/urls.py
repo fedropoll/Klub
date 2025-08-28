@@ -17,18 +17,6 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
-# Настройки Swagger
-SWAGGER_SETTINGS = {
-    'SECURITY_DEFINITIONS': {
-        'Bearer': {
-            'type': 'apiKey',
-            'name': 'Authorization',
-            'in': 'header',
-            'description': "Введите токен в формате: Bearer <your_token>"
-        }
-    },
-    'USE_SESSION_AUTH': False,
-}
 
 urlpatterns = [
     path('admin/', admin.site.urls),

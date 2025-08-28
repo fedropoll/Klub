@@ -128,16 +128,17 @@ REST_FRAMEWORK = {
     ),
 }
 
+# Настройки Swagger
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
-        'JWT': {
+        'Bearer': {
             'type': 'apiKey',
             'name': 'Authorization',
             'in': 'header',
-            'description': "Введите только токен без Bearer"
+            'description': "Введите токен в формате: Bearer <your_token>"
         }
     },
-    'USE_SESSION_AUTH': False,  # отключает Basic Auth
+    'USE_SESSION_AUTH': False,
 }
 
 # Пользовательская модель
