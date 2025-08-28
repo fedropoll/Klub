@@ -26,5 +26,5 @@ RUN mkdir -p /app/media
 # Открываем порт
 EXPOSE 8000
 
-# Команда запуска
-CMD ["gunicorn", "safe.wsgi:application", "--bind", "0.0.0.0:8000"]
+# Команда запуска с подстановкой переменной PORT
+ENTRYPOINT ["sh", "-c", "gunicorn safe.wsgi:application --bind 0.0.0.0:${PORT}"]
