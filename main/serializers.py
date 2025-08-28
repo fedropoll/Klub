@@ -6,6 +6,7 @@ from listdoctors.models import Doctor
 from services.models import Service
 from listdoctors.serializers import DoctorSerializer
 from services.serializers import ServiceSerializer
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 User = get_user_model()
 class BaseRoleTokenSerializer(TokenObtainPairSerializer):
@@ -20,34 +21,15 @@ class BaseRoleTokenSerializer(TokenObtainPairSerializer):
 
 
 
+
 class AdminTokenSerializer(TokenObtainPairSerializer):
-    def validate(self, attrs):
-        # Сначала проверим, есть ли email и password
-        email = attrs.get('email')
-        password = attrs.get('password')
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        # кастомные данные в токене
+        token['role'] = 'admin'
+        return token
 
-        if not email or not password:
-            raise serializers.ValidationError("Нужно указать email и пароль")
-
-        # Проверяем, есть ли пользователь
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            raise serializers.ValidationError("Пользователь не найден")
-
-        # Проверка пароля
-        if not user.check_password(password):
-            raise serializers.ValidationError("Неверный пароль")
-
-        # Проверка суперпользователя
-        if not user.is_superuser:
-            raise serializers.ValidationError("Нет прав администратора")
-
-        # Если всё ок — генерируем токен
-        data = super().validate(attrs)
-        data['email'] = user.email
-        data['role'] = 'admin'
-        return data
 
 
 class DirectorTokenSerializer(BaseRoleTokenSerializer):

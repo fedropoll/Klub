@@ -11,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Основные настройки
 SECRET_KEY = os.getenv('SECRET_KEY', 'fallback-key')
 DEBUG = False
-ALLOWED_HOSTS = ["safeclinic-production.up.railway.app", ".railway.app"]
+ALLOWED_HOSTS = ['safeclinic-production.up.railway.app', '127.0.0.1', 'localhost']
 
 # База данных
 DATABASE_URL = os.getenv('DATABASE_URL')
@@ -95,17 +95,17 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# CORS и CSRF
-CORS_ALLOWED_ORIGINS = ['https://safeclinic-production.up.railway.app']
-CSRF_TRUSTED_ORIGINS = ["https://safeclinic-production.up.railway.app"]
-CORS_ALLOW_ALL_ORIGINS = True  # временно для теста
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = [
+    "https://safeclinic-production.up.railway.app",
+]
+CSRF_TRUSTED_ORIGINS = [
+    "https://safeclinic-production.up.railway.app"
+]
 
 SECURE_SSL_REDIRECT = False
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-CSRF_TRUSTED_ORIGINS = [
-    "https://safeclinic-production.up.railway.app",
-    "https://*.railway.app"
-]
+
 
 
 # Security для продакшна

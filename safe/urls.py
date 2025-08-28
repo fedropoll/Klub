@@ -6,6 +6,8 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework.permissions import AllowAny
 
+from main.views import AdminTokenView, DoctorTokenView, ClientTokenView, DirectorTokenView
+
 # Настройка Swagger
 schema_view = get_schema_view(
     openapi.Info(
@@ -23,6 +25,10 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
+    path('api/token/admin/', AdminTokenView.as_view(), name='api_token_admin_create'),
+    path('api/token/director/', DirectorTokenView.as_view(), name='token_director'),
+    path('api/token/doctor/', DoctorTokenView.as_view(), name='token_doctor'),
+    path('api/token/client/', ClientTokenView.as_view(), name='token_client'),
 
     # Основные приложения
     path('services/', include('services.urls')),
