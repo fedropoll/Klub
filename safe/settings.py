@@ -11,16 +11,24 @@ load_dotenv(BASE_DIR / ".env.local")
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key")
 DEBUG = False  # всегда True для dev
 # ALLOWED_HOSTS = ['safeclinic-production.up.railway.app', '127.0.0.1', 'localhost']
-ALLOWED_HOSTS = ['safeclinic-production.up.railway.app']
-
+ALLOWED_HOSTS = [
+    "safeclinic-production.up.railway.app",
+    "127.0.0.1",
+    "localhost",
+]
 PORT = os.environ.get('PORT', 8000)  # 8000 как fallback на локале
-CORS_ALLOWED_ORIGINS = [
+
+
+CSRF_TRUSTED_ORIGINS = [
     "https://safeclinic-production.up.railway.app",
 ]
 # Отключаем SSL для dev
-SECURE_SSL_REDIRECT = True
+SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
+
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # База данных
 DATABASES = {
