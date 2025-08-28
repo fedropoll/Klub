@@ -5,7 +5,7 @@ from django.conf.urls.static import static
 from django.views.decorators.csrf import csrf_exempt
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
-from rest_framework import permissions
+from rest_framework import permissions  # важно!
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -17,17 +17,17 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
-
+# Настройки Swagger
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
-        'JWT': {
+        'Bearer': {
             'type': 'apiKey',
             'name': 'Authorization',
             'in': 'header',
-            'description': "Введите только токен без Bearer"
+            'description': "Введите токен в формате: Bearer <your_token>"
         }
     },
-    'USE_SESSION_AUTH': False,  # отключает Basic Auth
+    'USE_SESSION_AUTH': False,
 }
 
 urlpatterns = [
@@ -48,6 +48,7 @@ urlpatterns = [
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]
 
+# Для статики и медиа
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
