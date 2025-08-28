@@ -2,11 +2,11 @@
 
 from rest_framework import viewsets
 from .models import Branch
+from .permissions import IsAdminOrDoctor
 from .serializers import BranchSerializer
-from .permissions import ReadOnlyOrAdminOrDirector # Using our custom permission
 
 class BranchViewSet(viewsets.ModelViewSet):
 
     queryset = Branch.objects.all()
     serializer_class = BranchSerializer
-    permission_classes = [ReadOnlyOrAdminOrDirector]
+    permission_classes = [IsAdminOrDoctor]
