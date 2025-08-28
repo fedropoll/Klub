@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import CustomUser, UserProfile, ClientProfile, Appointment, Payment
 from listdoctors.models import Doctor
 from services.models import Service
@@ -22,14 +21,16 @@ class BaseRoleTokenSerializer(TokenObtainPairSerializer):
 
 
 
-class AdminTokenSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        # кастомные данные в токене
-        token['role'] = 'admin'
-        return token
-
+class AdminTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        user = self.user
+        if not getattr(user, 'userprofile', None) or user.userprofile.role != 'admin':
+            from rest_framework.exceptions import AuthenticationFailed
+            raise AuthenticationFailed('Пользователь не админ')
+        data['email'] = user.email
+        data['role'] = user.userprofile.role
+        return data
 
 
 class DirectorTokenSerializer(BaseRoleTokenSerializer):

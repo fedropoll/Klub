@@ -4,19 +4,21 @@ from dotenv import load_dotenv
 import dj_database_url
 from datetime import timedelta
 
-# Загрузка .env
 load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Основные настройки
 SECRET_KEY = os.getenv('SECRET_KEY', 'fallback-key')
-DEBUG = False
-ALLOWED_HOSTS = ['safeclinic-production.up.railway.app', '127.0.0.1', 'localhost']
+DEBUG = True
+ALLOWED_HOSTS = ['*']
 
-# База данных
-DATABASE_URL = os.getenv('DATABASE_URL')
-DATABASES = {'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)}
-
+DATABASES = {
+    'default': dj_database_url.config(
+        default=os.getenv("DATABASE_URL"),
+        conn_max_age=600,
+        ssl_require=False
+    )
+}
 # Приложения
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -82,38 +84,40 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Язык и время
+# Локализация
 LANGUAGE_CODE = 'ru'
 TIME_ZONE = 'Asia/Bishkek'
 USE_I18N = True
 USE_TZ = True
 
-# Медиа и статика
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# Статика и медиа
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-CORS_ALLOW_ALL_ORIGINS = False
-CORS_ALLOWED_ORIGINS = [
-    "https://safeclinic-production.up.railway.app",
-]
-CSRF_TRUSTED_ORIGINS = [
-    "https://safeclinic-production.up.railway.app"
-]
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
-SECURE_SSL_REDIRECT = False
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# CORS и CSRF
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True  # локально разрешаем всё
+    CSRF_TRUSTED_ORIGINS = []
+else:
+    CORS_ALLOW_ALL_ORIGINS = False
+    CORS_ALLOWED_ORIGINS = ['https://safeclinic-production.up.railway.app']
+    CSRF_TRUSTED_ORIGINS = ['https://safeclinic-production.up.railway.app']
 
-
-
-# Security для продакшна
+# HTTPS настройки (только на проде)
+# HTTPS только на проде
 if not DEBUG:
+    SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    SECURE_SSL_REDIRECT = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+else:
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
 
 # REST Framework и JWT
 REST_FRAMEWORK = {
@@ -127,6 +131,26 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
 }
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'level': 'WARNING',  # INFO/DEBUG — отключаем
+        },
+    },
+    'loggers': {
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'WARNING',  # показываем только предупреждения и ошибки
+            'propagate': False,
+        },
+    },
+}
+
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('ACCESS_TOKEN_LIFETIME', 60))),

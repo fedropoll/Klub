@@ -8,7 +8,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import (
     MyTokenObtainPairSerializer,
-    AdminTokenSerializer, DirectorTokenSerializer, DoctorTokenSerializer,
+    DirectorTokenSerializer, DoctorTokenSerializer,
     ClientTokenSerializer,
     UserRegistrationSerializer,
     UserProfileSerializer,
@@ -18,7 +18,7 @@ from .serializers import (
     PaymentSerializer,
     AppointmentCreateSerializer,
     ResendCodeSerializer,
-    VerifyEmailSerializer,
+    VerifyEmailSerializer, AdminTokenObtainPairSerializer,
 )
 from .models import CustomUser, ClientProfile, EmailVerificationCode, Appointment, Payment
 from listdoctors.models import Doctor
@@ -141,8 +141,6 @@ class ResendVerificationCodeView(GenericAPIView):
 #         refresh = RefreshToken.for_user(user)
 #         return Response({'refresh': str(refresh), 'access': str(refresh.access_token)}, status=status.HTTP_200_OK)
 
-class AdminTokenView(TokenObtainPairView):
-    serializer_class = AdminTokenSerializer
 
 class DirectorTokenView(TokenObtainPairView):
     serializer_class = DirectorTokenSerializer
@@ -159,6 +157,10 @@ class DirectorTokenView(TokenObtainPairView):
         refresh = RefreshToken.for_user(user)
         return Response({'refresh': str(refresh), 'access': str(refresh.access_token)}, status=status.HTTP_200_OK)
 
+
+
+class AdminTokenObtainPairView(TokenObtainPairView):
+    serializer_class = AdminTokenObtainPairSerializer
 
 class DoctorTokenView(TokenObtainPairView):
     serializer_class = DoctorTokenSerializer

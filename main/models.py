@@ -2,10 +2,9 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from datetime import timedelta
-from django.utils import timezone
 from listdoctors.models import Doctor
 
+# Менеджер пользователя
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -22,9 +21,9 @@ class CustomUserManager(BaseUserManager):
         extra_fields.setdefault('is_active', True)
         return self.create_user(email, password, **extra_fields)
 
-
+# Пользователь
 class CustomUser(AbstractUser):
-    username = models.CharField(max_length=150, unique=True, null=True, blank=True)
+    username = None
     email = models.EmailField(unique=True)
 
     USERNAME_FIELD = 'email'
@@ -35,7 +34,7 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return self.email
 
-
+# Профиль пользователя
 class UserProfile(models.Model):
     ROLES = (
         ('patient', 'Пациент'),
@@ -49,6 +48,25 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.email} - {self.get_role_display()}"
+
+# Профиль клиента
+class ClientProfile(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='client_profile')
+    full_name = models.CharField(max_length=255, blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+
+    def __str__(self):
+        return self.full_name or self.user.email
+
+# Сигнал для автоматического создания профилей
+@receiver(post_save, sender=CustomUser)
+def create_user_profiles(sender, instance, created, **kwargs):
+    if created:
+        role = 'admin' if instance.is_superuser else 'patient'
+        profile = UserProfile.objects.create(user=instance, role=role)
+        ClientProfile.objects.create(user=instance)
+        if role == 'doctor':
+            Doctor.objects.create(user_profile=profile)
 
 
 class ClientProfile(models.Model):
@@ -131,10 +149,3 @@ class Payment(models.Model):
         return f"Оплата {self.amount} от {self.client.full_name or self.client.user.email} ({self.get_status_display()})"
 
 
-@receiver(post_save, sender=CustomUser)
-def create_user_profiles(sender, instance, created, **kwargs):
-    if created:
-        UserProfile.objects.create(user=instance)
-        ClientProfile.objects.create(user=instance)
-        if instance.user_profile.role == 'doctor':
-            Doctor.objects.create(user_profile=instance.user_profile)
