@@ -1,16 +1,14 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, filters
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.db.models import Count, Sum
-from django.utils import timezone
-from datetime import timedelta
+from rest_framework.parsers import MultiPartParser, FormParser
+from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Sum
 
 from .models import Service, Category
 from .serializers import ServiceSerializer, CategorySerializer
-from .permissions import ReadOnlyOrAdminOrDirector  # Убедитесь, что этот импорт корректен
+from .permissions import ReadOnlyOrAdminOrDirector
 
 
 class ServiceViewSet(viewsets.ModelViewSet):
@@ -19,7 +17,10 @@ class ServiceViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['is_active', 'branch', 'category']
     ordering_fields = ['price', 'name', 'created_at']
-    permission_classes = [AllowAny] # Разрешает доступ как с токеном, так и без него
+    permission_classes = [AllowAny]
+
+    # Добавляем поддержку загрузки файлов
+    parser_classes = [MultiPartParser, FormParser]
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def analytics(self, request):
