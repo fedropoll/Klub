@@ -130,20 +130,29 @@ class ResendVerificationCodeView(GenericAPIView):
 class AdminTokenObtainPairView(TokenObtainPairView):
     serializer_class = AdminTokenObtainPairSerializer
 
+# === DIRECTOR ===
 class DirectorTokenView(TokenObtainPairView):
-    serializer_class = DirectorTokenSerializer
-
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
         password = request.data.get('password')
-        user = CustomUser.objects.filter(email=email).first()
-        if not user:
-            user = CustomUser.objects.create_user(email=email, password=password)
-            # добавь роль director
-            user.user_profile.role = 'director'
-            user.user_profile.save()
+
+        try:
+            user = CustomUser.objects.get(email=email)
+        except CustomUser.DoesNotExist:
+            return Response({"detail": "Директор с таким email не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+        if not user.check_password(password):
+            return Response({"detail": "Неверный пароль"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if user.user_profile.role != "director":
+            return Response({"detail": "Этот токен доступен только для директоров"}, status=status.HTTP_403_FORBIDDEN)
+
         refresh = RefreshToken.for_user(user)
-        return Response({'refresh': str(refresh), 'access': str(refresh.access_token)}, status=status.HTTP_200_OK)
+        return Response({
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+            "role": user.user_profile.role
+        }, status=status.HTTP_200_OK)
 
 
 class DoctorTokenView(TokenObtainPairView):
@@ -152,27 +161,49 @@ class DoctorTokenView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
         password = request.data.get('password')
-        user = CustomUser.objects.filter(email=email).first()
-        if not user:
-            user = CustomUser.objects.create_user(email=email, password=password)
-            user.user_profile.role = 'doctor'
-            user.user_profile.save()
+
+        try:
+            user = CustomUser.objects.get(email=email)
+        except CustomUser.DoesNotExist:
+            return Response({"detail": "Доктор с таким email не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+        if not user.check_password(password):
+            return Response({"detail": "Неверный пароль"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if user.user_profile.role != "doctor":
+            return Response({"detail": "Этот токен доступен только для докторов"}, status=status.HTTP_403_FORBIDDEN)
+
         refresh = RefreshToken.for_user(user)
-        return Response({'refresh': str(refresh), 'access': str(refresh.access_token)}, status=status.HTTP_200_OK)
+        return Response({
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+            "role": user.user_profile.role
+        }, status=status.HTTP_200_OK)
 
 
+# === CLIENT ===
 class ClientTokenView(TokenObtainPairView):
-    serializer_class = ClientTokenSerializer
-
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
         password = request.data.get('password')
-        user = CustomUser.objects.filter(email=email).first()
-        if not user:
-            user = CustomUser.objects.create_user(email=email, password=password)
-        refresh = RefreshToken.for_user(user)
-        return Response({'refresh': str(refresh), 'access': str(refresh.access_token)}, status=status.HTTP_200_OK)
 
+        try:
+            user = CustomUser.objects.get(email=email)
+        except CustomUser.DoesNotExist:
+            return Response({"detail": "Клиент с таким email не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+        if not user.check_password(password):
+            return Response({"detail": "Неверный пароль"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if user.user_profile.role != "client":
+            return Response({"detail": "Этот токен доступен только для клиентов"}, status=status.HTTP_403_FORBIDDEN)
+
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+            "role": user.user_profile.role
+        }, status=status.HTTP_200_OK)
 
 # --- CURRENT USER ---
 
