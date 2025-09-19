@@ -15,7 +15,8 @@ from .serializers import (
     PaymentSerializer,
     AppointmentCreateSerializer,
     ResendCodeSerializer,
-    VerifyEmailSerializer,  RoleTokenObtainPairSerializer,
+    VerifyEmailSerializer, RoleTokenObtainPairSerializer, AdminTokenObtainPairSerializer,
+    DirectorTokenObtainPairSerializer, DoctorTokenObtainPairSerializer, ClientTokenObtainPairSerializer,
 )
 from .models import CustomUser, ClientProfile, EmailVerificationCode, Appointment, Payment
 from listdoctors.models import Doctor
@@ -127,40 +128,16 @@ class ResendVerificationCodeView(GenericAPIView):
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 class AdminTokenObtainPairView(TokenObtainPairView):
-    serializer_class = RoleTokenObtainPairSerializer
-
-    def get_serializer(self, *args, **kwargs):
-        kwargs['context'] = self.get_serializer_context()
-        return self.serializer_class(*args, allowed_role='admin', **kwargs)
-
-
+    serializer_class = AdminTokenObtainPairSerializer
 
 class DirectorTokenObtainPairView(TokenObtainPairView):
-    serializer_class = RoleTokenObtainPairSerializer
-
-    def get_serializer(self, *args, **kwargs):
-        kwargs['context'] = self.get_serializer_context()
-        serializer = self.serializer_class(*args, **kwargs)
-        serializer.allowed_role = 'director'
-        return serializer
+    serializer_class = DirectorTokenObtainPairSerializer
 
 class DoctorTokenObtainPairView(TokenObtainPairView):
-    serializer_class = RoleTokenObtainPairSerializer
-
-    def get_serializer(self, *args, **kwargs):
-        kwargs['context'] = self.get_serializer_context()
-        serializer = self.serializer_class(*args, **kwargs)
-        serializer.allowed_role = 'doctor'
-        return serializer
+    serializer_class = DoctorTokenObtainPairSerializer
 
 class ClientTokenObtainPairView(TokenObtainPairView):
-    serializer_class = RoleTokenObtainPairSerializer
-
-    def get_serializer(self, *args, **kwargs):
-        kwargs['context'] = self.get_serializer_context()
-        serializer = self.serializer_class(*args, **kwargs)
-        serializer.allowed_role = 'patient'
-        return serializer
+    serializer_class = ClientTokenObtainPairSerializer
 
 
 # class AdminTokenObtainPairView(TokenObtainPairView):

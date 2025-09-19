@@ -44,6 +44,17 @@ class RoleTokenObtainPairSerializer(TokenObtainPairSerializer):
         data['role'] = user.user_profile.role
         return data
 
+class AdminTokenObtainPairSerializer(RoleTokenObtainPairSerializer):
+    allowed_role = 'admin'
+
+class DirectorTokenObtainPairSerializer(RoleTokenObtainPairSerializer):
+    allowed_role = 'director'
+
+class DoctorTokenObtainPairSerializer(RoleTokenObtainPairSerializer):
+    allowed_role = 'doctor'
+
+class ClientTokenObtainPairSerializer(RoleTokenObtainPairSerializer):
+    allowed_role = 'patient'
 
 
 # class AdminTokenObtainPairSerializer(serializers.Serializer):
