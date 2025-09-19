@@ -20,7 +20,9 @@ class BaseRoleTokenSerializer(TokenObtainPairSerializer):
 
 
 class RoleTokenObtainPairSerializer(TokenObtainPairSerializer):
-    allowed_role = None
+    def __init__(self, *args, allowed_role=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.allowed_role = allowed_role
 
     def validate(self, attrs):
         email = attrs.get('email')
@@ -34,7 +36,8 @@ class RoleTokenObtainPairSerializer(TokenObtainPairSerializer):
         if not hasattr(user, 'user_profile'):
             raise serializers.ValidationError("Профиль пользователя не найден")
 
-        if self.allowed_role and user.user_profile.role.lower() != self.allowed_role.lower():
+        # проверяем роль (с защитой от None)
+        if self.allowed_role and getattr(user.user_profile, 'role', '').lower() != self.allowed_role.lower():
             raise serializers.ValidationError(f"Этот токен доступен только для роли {self.allowed_role}")
 
         data = super().validate(attrs)

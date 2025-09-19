@@ -131,9 +131,8 @@ class AdminTokenObtainPairView(TokenObtainPairView):
 
     def get_serializer(self, *args, **kwargs):
         kwargs['context'] = self.get_serializer_context()
-        serializer = self.serializer_class(*args, **kwargs)
-        serializer.allowed_role = 'admin'  # устанавливаем для экземпляра
-        return serializer
+        return self.serializer_class(*args, allowed_role='admin', **kwargs)
+
 
 
 class DirectorTokenObtainPairView(TokenObtainPairView):
