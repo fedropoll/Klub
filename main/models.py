@@ -1,4 +1,4 @@
-from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.contrib.auth.models import AbstractUser, BaseUserManager, User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from listdoctors.models import Doctor
@@ -80,21 +80,19 @@ class ClientProfile(models.Model):
 
 
 
-from main.models import CustomUser, UserProfile, ClientProfile  # замените main на ваше приложение
 
-# Создаём пользователя, если его нет
-user, created = CustomUser.objects.get_or_create(email='admin@gmail.com')
-if created:
-    user.set_password('admin123')  # задаём пароль
-    user.is_staff = True
-    user.is_superuser = True
-    user.save()
+class EmailVerificationCode(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='verification_code')
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
 
-# Обновляем профиль
-profile, _ = UserProfile.objects.update_or_create(user=user, defaults={'role': 'admin'})
+    def is_expired(self):
+        # правильное использование timezone и timedelta
+        return timezone.now() > (self.created_at + timedelta(minutes=10))
 
-# Проверим
-print(user.email, user.is_superuser, profile.role)
+    def __str__(self):
+        return f"Код для {self.user.email}: {self.code}"
 
 
 
