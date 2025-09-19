@@ -4,7 +4,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from listdoctors.models import Doctor
 
-# Менеджер пользователя
+
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
