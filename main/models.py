@@ -1,8 +1,11 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from listdoctors.models import Doctor
+from datetime import timedelta
+from django.utils import timezone
+from django.db import models
+from django.contrib.auth import get_user_model
 
 
 class CustomUserManager(BaseUserManager):
@@ -49,14 +52,6 @@ class UserProfile(models.Model):
     def __str__(self):
         return f"{self.user.email} - {self.get_role_display()}"
 
-# Профиль клиента
-class ClientProfile(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='client_profile')
-    full_name = models.CharField(max_length=255, blank=True, null=True)
-    phone = models.CharField(max_length=20, blank=True, null=True)
-
-    def __str__(self):
-        return self.full_name or self.user.email
 
 # Сигнал для автоматического создания профилей
 @receiver(post_save, sender=CustomUser)
@@ -84,17 +79,23 @@ class ClientProfile(models.Model):
         return self.full_name or self.user.email
 
 
-class EmailVerificationCode(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='verification_code')
-    code = models.CharField(max_length=6)
-    created_at = models.DateTimeField(auto_now_add=True)
-    is_used = models.BooleanField(default=False)
 
-    def is_expired(self):
-        return timezone.now() > (self.created_at + timedelta(minutes=10))
+from main.models import CustomUser, UserProfile, ClientProfile  # замените main на ваше приложение
 
-    def __str__(self):
-        return f"Код для {self.user.email}: {self.code}"
+# Создаём пользователя, если его нет
+user, created = CustomUser.objects.get_or_create(email='admin@gmail.com')
+if created:
+    user.set_password('admin123')  # задаём пароль
+    user.is_staff = True
+    user.is_superuser = True
+    user.save()
+
+# Обновляем профиль
+profile, _ = UserProfile.objects.update_or_create(user=user, defaults={'role': 'admin'})
+
+# Проверим
+print(user.email, user.is_superuser, profile.role)
+
 
 
 class Appointment(models.Model):

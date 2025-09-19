@@ -7,9 +7,7 @@ from drf_yasg import openapi
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import (
-    MyTokenObtainPairSerializer,
-    DirectorTokenSerializer, DoctorTokenSerializer,
-    ClientTokenSerializer,
+    DoctorTokenSerializer,
     UserRegistrationSerializer,
     UserProfileSerializer,
     ClientProfileSerializer,
