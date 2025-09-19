@@ -129,32 +129,37 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 class AdminTokenObtainPairView(TokenObtainPairView):
     serializer_class = RoleTokenObtainPairSerializer
 
-    def get_serializer_class(self):
-        serializer = super().get_serializer_class()
-        serializer.allowed_role = 'admin'
+    def get_serializer(self, *args, **kwargs):
+        kwargs['context'] = self.get_serializer_context()
+        serializer = self.serializer_class(*args, **kwargs)
+        serializer.allowed_role = 'admin'  # устанавливаем для экземпляра
         return serializer
+
 
 class DirectorTokenObtainPairView(TokenObtainPairView):
     serializer_class = RoleTokenObtainPairSerializer
 
-    def get_serializer_class(self):
-        serializer = super().get_serializer_class()
+    def get_serializer(self, *args, **kwargs):
+        kwargs['context'] = self.get_serializer_context()
+        serializer = self.serializer_class(*args, **kwargs)
         serializer.allowed_role = 'director'
         return serializer
 
 class DoctorTokenObtainPairView(TokenObtainPairView):
     serializer_class = RoleTokenObtainPairSerializer
 
-    def get_serializer_class(self):
-        serializer = super().get_serializer_class()
+    def get_serializer(self, *args, **kwargs):
+        kwargs['context'] = self.get_serializer_context()
+        serializer = self.serializer_class(*args, **kwargs)
         serializer.allowed_role = 'doctor'
         return serializer
 
 class ClientTokenObtainPairView(TokenObtainPairView):
     serializer_class = RoleTokenObtainPairSerializer
 
-    def get_serializer_class(self):
-        serializer = super().get_serializer_class()
+    def get_serializer(self, *args, **kwargs):
+        kwargs['context'] = self.get_serializer_context()
+        serializer = self.serializer_class(*args, **kwargs)
         serializer.allowed_role = 'patient'
         return serializer
 
