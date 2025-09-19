@@ -7,7 +7,6 @@ from drf_yasg import openapi
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import (
-    DoctorTokenSerializer,
     UserRegistrationSerializer,
     UserProfileSerializer,
     ClientProfileSerializer,
@@ -16,7 +15,7 @@ from .serializers import (
     PaymentSerializer,
     AppointmentCreateSerializer,
     ResendCodeSerializer,
-    VerifyEmailSerializer, AdminTokenObtainPairSerializer, RoleTokenObtainPairSerializer,
+    VerifyEmailSerializer,  RoleTokenObtainPairSerializer,
 )
 from .models import CustomUser, ClientProfile, EmailVerificationCode, Appointment, Payment
 from listdoctors.models import Doctor
