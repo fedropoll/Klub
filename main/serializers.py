@@ -6,7 +6,6 @@ from services.models import Service
 from listdoctors.serializers import DoctorSerializer
 from services.serializers import ServiceSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 class BaseRoleTokenSerializer(TokenObtainPairSerializer):
