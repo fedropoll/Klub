@@ -20,48 +20,68 @@ class BaseRoleTokenSerializer(TokenObtainPairSerializer):
         return data
 
 
-
-
-
-class AdminTokenObtainPairSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
+class RoleTokenObtainPairSerializer(TokenObtainPairSerializer):
+    allowed_role = None  # сюда укажем роль, допустим 'admin'
 
     def validate(self, attrs):
-        email = attrs.get("email")
-        password = attrs.get("password")
+        email = attrs.get('email')
+        password = attrs.get('password')
 
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
+        user = User.objects.filter(email=email).first()
+        if not user:
             raise serializers.ValidationError("Пользователь не найден")
-
         if not user.check_password(password):
             raise serializers.ValidationError("Неверный пароль")
+        if not hasattr(user, 'user_profile'):
+            raise serializers.ValidationError("Профиль пользователя не найден")
 
-        # Проверяем роль
-        profile = UserProfile.objects.get(user=user)
-        if profile.role.lower() != "admin":
-            raise serializers.ValidationError("Пользователь не админ")
+        if self.allowed_role and user.user_profile.role != self.allowed_role:
+            raise serializers.ValidationError(f"Этот токен доступен только для роли {self.allowed_role}")
 
-        refresh = RefreshToken.for_user(user)
-        return {
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-        }
+        data = super().validate(attrs)
+        data['role'] = user.user_profile.role
+        return data
 
 
-
-class DirectorTokenSerializer(BaseRoleTokenSerializer):
-    role = "director"
-
-
-class DoctorTokenSerializer(BaseRoleTokenSerializer):
-    role = "doctor"
-
-
-class ClientTokenSerializer(BaseRoleTokenSerializer):
-    role = "patient"
+# class AdminTokenObtainPairSerializer(serializers.Serializer):
+#     email = serializers.EmailField()
+#     password = serializers.CharField(write_only=True)
+#
+#     def validate(self, attrs):
+#         email = attrs.get("email")
+#         password = attrs.get("password")
+#
+#         try:
+#             user = User.objects.get(email=email)
+#         except User.DoesNotExist:
+#             raise serializers.ValidationError("Пользователь не найден")
+#
+#         if not user.check_password(password):
+#             raise serializers.ValidationError("Неверный пароль")
+#
+#         # Проверяем роль
+#         profile = UserProfile.objects.get(user=user)
+#         if profile.role.lower() != "admin":
+#             raise serializers.ValidationError("Пользователь не админ")
+#
+#         refresh = RefreshToken.for_user(user)
+#         return {
+#             "refresh": str(refresh),
+#             "access": str(refresh.access_token),
+#         }
+#
+#
+#
+# class DirectorTokenSerializer(BaseRoleTokenSerializer):
+#     role = "director"
+#
+#
+# class DoctorTokenSerializer(BaseRoleTokenSerializer):
+#     role = "doctor"
+#
+#
+# class ClientTokenSerializer(BaseRoleTokenSerializer):
+#     role = "patient"
 # ------------------- JWT для любого пользователя -------------------
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):

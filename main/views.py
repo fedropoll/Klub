@@ -16,7 +16,7 @@ from .serializers import (
     PaymentSerializer,
     AppointmentCreateSerializer,
     ResendCodeSerializer,
-    VerifyEmailSerializer, AdminTokenObtainPairSerializer,
+    VerifyEmailSerializer, AdminTokenObtainPairSerializer, RoleTokenObtainPairSerializer,
 )
 from .models import CustomUser, ClientProfile, EmailVerificationCode, Appointment, Payment
 from listdoctors.models import Doctor
@@ -125,83 +125,118 @@ class ResendVerificationCodeView(GenericAPIView):
             return Response({'detail': 'Пользователь не найден.'}, status=status.HTTP_404_NOT_FOUND)
 
 
+from rest_framework_simplejwt.views import TokenObtainPairView
+
 class AdminTokenObtainPairView(TokenObtainPairView):
-    serializer_class = AdminTokenObtainPairSerializer
+    serializer_class = RoleTokenObtainPairSerializer
 
-# === DIRECTOR ===
-class DirectorTokenView(TokenObtainPairView):
-    def post(self, request, *args, **kwargs):
-        email = request.data.get('email')
-        password = request.data.get('password')
+    def get_serializer_class(self):
+        serializer = super().get_serializer_class()
+        serializer.allowed_role = 'admin'
+        return serializer
 
-        try:
-            user = CustomUser.objects.get(email=email)
-        except CustomUser.DoesNotExist:
-            return Response({"detail": "Директор с таким email не найден"}, status=status.HTTP_404_NOT_FOUND)
+class DirectorTokenObtainPairView(TokenObtainPairView):
+    serializer_class = RoleTokenObtainPairSerializer
 
-        if not user.check_password(password):
-            return Response({"detail": "Неверный пароль"}, status=status.HTTP_400_BAD_REQUEST)
+    def get_serializer_class(self):
+        serializer = super().get_serializer_class()
+        serializer.allowed_role = 'director'
+        return serializer
 
-        if user.user_profile.role != "director":
-            return Response({"detail": "Этот токен доступен только для директоров"}, status=status.HTTP_403_FORBIDDEN)
+class DoctorTokenObtainPairView(TokenObtainPairView):
+    serializer_class = RoleTokenObtainPairSerializer
 
-        refresh = RefreshToken.for_user(user)
-        return Response({
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-            "role": user.user_profile.role
-        }, status=status.HTTP_200_OK)
+    def get_serializer_class(self):
+        serializer = super().get_serializer_class()
+        serializer.allowed_role = 'doctor'
+        return serializer
 
+class ClientTokenObtainPairView(TokenObtainPairView):
+    serializer_class = RoleTokenObtainPairSerializer
 
-class DoctorTokenView(TokenObtainPairView):
-    serializer_class = DoctorTokenSerializer
-
-    def post(self, request, *args, **kwargs):
-        email = request.data.get('email')
-        password = request.data.get('password')
-
-        try:
-            user = CustomUser.objects.get(email=email)
-        except CustomUser.DoesNotExist:
-            return Response({"detail": "Доктор с таким email не найден"}, status=status.HTTP_404_NOT_FOUND)
-
-        if not user.check_password(password):
-            return Response({"detail": "Неверный пароль"}, status=status.HTTP_400_BAD_REQUEST)
-
-        if user.user_profile.role != "doctor":
-            return Response({"detail": "Этот токен доступен только для докторов"}, status=status.HTTP_403_FORBIDDEN)
-
-        refresh = RefreshToken.for_user(user)
-        return Response({
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-            "role": user.user_profile.role
-        }, status=status.HTTP_200_OK)
+    def get_serializer_class(self):
+        serializer = super().get_serializer_class()
+        serializer.allowed_role = 'patient'
+        return serializer
 
 
-# === CLIENT ===
-class ClientTokenView(TokenObtainPairView):
-    def post(self, request, *args, **kwargs):
-        email = request.data.get('email')
-        password = request.data.get('password')
-
-        try:
-            user = CustomUser.objects.get(email=email)
-        except CustomUser.DoesNotExist:
-            return Response({"detail": "Клиент с таким email не найден"}, status=status.HTTP_404_NOT_FOUND)
-
-        if not user.check_password(password):
-            return Response({"detail": "Неверный пароль"}, status=status.HTTP_400_BAD_REQUEST)
-
-        if user.user_profile.role != "client":
-            return Response({"detail": "Этот токен доступен только для клиентов"}, status=status.HTTP_403_FORBIDDEN)
-
-        refresh = RefreshToken.for_user(user)
-        return Response({
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-            "role": user.user_profile.role
-        }, status=status.HTTP_200_OK)
+# class AdminTokenObtainPairView(TokenObtainPairView):
+#     serializer_class = AdminTokenObtainPairSerializer
+#
+# # === DIRECTOR ===
+# class DirectorTokenView(TokenObtainPairView):
+#     def post(self, request, *args, **kwargs):
+#         email = request.data.get('email')
+#         password = request.data.get('password')
+#
+#         try:
+#             user = CustomUser.objects.get(email=email)
+#         except CustomUser.DoesNotExist:
+#             return Response({"detail": "Директор с таким email не найден"}, status=status.HTTP_404_NOT_FOUND)
+#
+#         if not user.check_password(password):
+#             return Response({"detail": "Неверный пароль"}, status=status.HTTP_400_BAD_REQUEST)
+#
+#         if user.user_profile.role != "director":
+#             return Response({"detail": "Этот токен доступен только для директоров"}, status=status.HTTP_403_FORBIDDEN)
+#
+#         refresh = RefreshToken.for_user(user)
+#         return Response({
+#             "refresh": str(refresh),
+#             "access": str(refresh.access_token),
+#             "role": user.user_profile.role
+#         }, status=status.HTTP_200_OK)
+#
+#
+# class DoctorTokenView(TokenObtainPairView):
+#     serializer_class = DoctorTokenSerializer
+#
+#     def post(self, request, *args, **kwargs):
+#         email = request.data.get('email')
+#         password = request.data.get('password')
+#
+#         try:
+#             user = CustomUser.objects.get(email=email)
+#         except CustomUser.DoesNotExist:
+#             return Response({"detail": "Доктор с таким email не найден"}, status=status.HTTP_404_NOT_FOUND)
+#
+#         if not user.check_password(password):
+#             return Response({"detail": "Неверный пароль"}, status=status.HTTP_400_BAD_REQUEST)
+#
+#         if user.user_profile.role != "doctor":
+#             return Response({"detail": "Этот токен доступен только для докторов"}, status=status.HTTP_403_FORBIDDEN)
+#
+#         refresh = RefreshToken.for_user(user)
+#         return Response({
+#             "refresh": str(refresh),
+#             "access": str(refresh.access_token),
+#             "role": user.user_profile.role
+#         }, status=status.HTTP_200_OK)
+#
+#
+# # === CLIENT ===
+# class ClientTokenView(TokenObtainPairView):
+#     def post(self, request, *args, **kwargs):
+#         email = request.data.get('email')
+#         password = request.data.get('password')
+#
+#         try:
+#             user = CustomUser.objects.get(email=email)
+#         except CustomUser.DoesNotExist:
+#             return Response({"detail": "Клиент с таким email не найден"}, status=status.HTTP_404_NOT_FOUND)
+#
+#         if not user.check_password(password):
+#             return Response({"detail": "Неверный пароль"}, status=status.HTTP_400_BAD_REQUEST)
+#
+#         if user.user_profile.role != "client":
+#             return Response({"detail": "Этот токен доступен только для клиентов"}, status=status.HTTP_403_FORBIDDEN)
+#
+#         refresh = RefreshToken.for_user(user)
+#         return Response({
+#             "refresh": str(refresh),
+#             "access": str(refresh.access_token),
+#             "role": user.user_profile.role
+#         }, status=status.HTTP_200_OK)
 
 # --- CURRENT USER ---
 
