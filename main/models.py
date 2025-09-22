@@ -54,7 +54,7 @@ class UserProfile(models.Model):
         return f"{self.user.email} - {self.get_role_display()}"
 
 
-# Сигнал для автоматического создания профилей
+
 @receiver(post_save, sender=CustomUser)
 def create_user_profiles(sender, instance, created, **kwargs):
     if created:
