@@ -28,7 +28,6 @@ urlpatterns = [
     path('list_patients/', include('listpatients.urls')),
     path('branches/', include('branch.urls')),
     path('appointments/', include('appointments.urls')),
-    path('analytics/', include('data_analytics.urls')),
     path('', include('main.urls')),
 
     # Swagger UI
