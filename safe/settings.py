@@ -5,7 +5,11 @@ from dotenv import load_dotenv
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env.local")
+# Если production, грузим .env.production
+if os.getenv("RAILWAY_ENVIRONMENT") == "production":
+    load_dotenv(BASE_DIR / ".env.production")
+else:
+    load_dotenv(BASE_DIR / ".env.local")
 
 # Основные настройки
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key")
@@ -34,6 +38,7 @@ DATABASES = {
         default=os.getenv("DATABASE_URL")
     )
 }
+
 
 
 # JWT
