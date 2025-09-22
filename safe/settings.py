@@ -9,13 +9,10 @@ load_dotenv(BASE_DIR / ".env.local")
 
 # Основные настройки
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key")
-DEBUG = False  # всегда True для dev
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 # ALLOWED_HOSTS = ['safeclinic-production.up.railway.app', '127.0.0.1', 'localhost']
-ALLOWED_HOSTS = [
-    "safeclinic-production.up.railway.app",
-    "127.0.0.1",
-    "localhost",
-]
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
+
 PORT = os.environ.get('PORT', 8000)  # 8000 как fallback на локале
 
 CSRF_TRUSTED_ORIGINS = [
@@ -26,7 +23,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 
 # Отключаем SSL для dev
-SECURE_SSL_REDIRECT = False
+SECURE_SSL_REDIRECT = not DEBUG
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 
@@ -35,9 +32,7 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # База данных
 DATABASES = {
-    "default": dj_database_url.config(
-        default=os.getenv("DATABASE_URL", "postgresql://postgres:admin123@127.0.0.1:5433/safe_clinic")
-    )
+    "default": dj_database_url.config(default="sqlite:///db.sqlite3")
 }
 
 
