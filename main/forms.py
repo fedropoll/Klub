@@ -1,6 +1,7 @@
 from django import forms
 from .models import CustomUser, UserProfile
 
+
 class UserRegisterForm(forms.ModelForm):
     email = forms.EmailField(label="E-mail", required=True)
     password = forms.CharField(label="Пароль", widget=forms.PasswordInput)
