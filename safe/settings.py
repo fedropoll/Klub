@@ -34,11 +34,10 @@ USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 DATABASES = {
-    "default": dj_database_url.config(
-        default=os.getenv("DATABASE_URL")
+    "default": dj_database_url.parse(
+        os.getenv("DATABASE_URL") or "postgresql://postgres:DdVrKjpVhNwhyFHzfLSlvpCDEgyHosvO@hopper.proxy.rlwy.net:38396/railway"
     )
 }
-
 
 
 # JWT

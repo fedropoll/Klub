@@ -1,28 +1,19 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import CustomUser, UserProfile, ClientProfile, Appointment, Payment
+from .models import CustomUser, UserProfile, ClientProfile, EmailVerificationCode, Appointment, Payment
 from listdoctors.models import Doctor
 from services.models import Service
 from listdoctors.serializers import DoctorSerializer
 from services.serializers import ServiceSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.utils import timezone
 
 User = get_user_model()
-class BaseRoleTokenSerializer(TokenObtainPairSerializer):
-    role = None  # будем переопределять для каждой роли
-
-    def validate(self, attrs):
-        data = super().validate(attrs)
-        if self.role and self.user.user_profile.role != self.role:
-            raise serializers.ValidationError(f"Этот токен только для {self.role}.")
-        data["role"] = self.user.user_profile.role
-        return data
 
 
+# ------------------- JWT для ролей -------------------
 class RoleTokenObtainPairSerializer(TokenObtainPairSerializer):
-    def __init__(self, *args, allowed_role=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.allowed_role = allowed_role
+    allowed_role = None  # Переопределяем в наследниках
 
     def validate(self, attrs):
         email = attrs.get('email')
@@ -36,7 +27,6 @@ class RoleTokenObtainPairSerializer(TokenObtainPairSerializer):
         if not hasattr(user, 'user_profile'):
             raise serializers.ValidationError("Профиль пользователя не найден")
 
-        # проверяем роль (с защитой от None)
         if self.allowed_role and getattr(user.user_profile, 'role', '').lower() != self.allowed_role.lower():
             raise serializers.ValidationError(f"Этот токен доступен только для роли {self.allowed_role}")
 
@@ -44,83 +34,21 @@ class RoleTokenObtainPairSerializer(TokenObtainPairSerializer):
         data['role'] = user.user_profile.role
         return data
 
+
 class AdminTokenObtainPairSerializer(RoleTokenObtainPairSerializer):
     allowed_role = 'admin'
+
 
 class DirectorTokenObtainPairSerializer(RoleTokenObtainPairSerializer):
     allowed_role = 'director'
 
+
 class DoctorTokenObtainPairSerializer(RoleTokenObtainPairSerializer):
     allowed_role = 'doctor'
 
+
 class ClientTokenObtainPairSerializer(RoleTokenObtainPairSerializer):
     allowed_role = 'patient'
-
-
-# class AdminTokenObtainPairSerializer(serializers.Serializer):
-#     email = serializers.EmailField()
-#     password = serializers.CharField(write_only=True)
-#
-#     def validate(self, attrs):
-#         email = attrs.get("email")
-#         password = attrs.get("password")
-#
-#         try:
-#             user = User.objects.get(email=email)
-#         except User.DoesNotExist:
-#             raise serializers.ValidationError("Пользователь не найден")
-#
-#         if not user.check_password(password):
-#             raise serializers.ValidationError("Неверный пароль")
-#
-#         # Проверяем роль
-#         profile = UserProfile.objects.get(user=user)
-#         if profile.role.lower() != "admin":
-#             raise serializers.ValidationError("Пользователь не админ")
-#
-#         refresh = RefreshToken.for_user(user)
-#         return {
-#             "refresh": str(refresh),
-#             "access": str(refresh.access_token),
-#         }
-#
-#
-#
-# class DirectorTokenSerializer(BaseRoleTokenSerializer):
-#     role = "director"
-#
-#
-# class DoctorTokenSerializer(BaseRoleTokenSerializer):
-#     role = "doctor"
-#
-#
-# class ClientTokenSerializer(BaseRoleTokenSerializer):
-#     role = "patient"
-# ------------------- JWT для любого пользователя -------------------
-class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-    def validate(self, attrs):
-        email = attrs.get("email")
-        password = attrs.get("password")
-        role = attrs.get("role")
-
-        user = User.objects.filter(email=email).first()
-        if not user:
-            raise serializers.ValidationError("Пользователь с таким email не найден")
-        if not user.check_password(password):
-            raise serializers.ValidationError("Неверный пароль")
-        if not hasattr(user, 'user_profile'):
-            raise serializers.ValidationError("Профиль пользователя не найден")
-
-        data = super().validate(attrs)
-        data['email'] = user.email
-        data['role'] = user.user_profile.role
-        return data
-
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        token["role"] = user.user_profile.role if hasattr(user, "user_profile") else "unknown"
-        return token
 
 
 # ------------------- Регистрация пациента -------------------
@@ -143,9 +71,13 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('password2')
         user = CustomUser.objects.create_user(**validated_data)
-        UserProfile.objects.update_or_create(user=user, defaults={'role': 'patient'})
+
+        # Создаём профили безопасно
+        UserProfile.objects.get_or_create(user=user, defaults={'role': 'patient'})
         ClientProfile.objects.get_or_create(user=user)
+
         return user
+
 
 # ------------------- Профили -------------------
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -164,7 +96,6 @@ class ClientProfileSerializer(serializers.ModelSerializer):
 class CurrentUserSerializer(serializers.ModelSerializer):
     user_profile = UserProfileSerializer(read_only=True)
     client_profile = ClientProfileSerializer(read_only=True)
-    doctor_profile = DoctorSerializer(source='user_profile.doctor_profile', read_only=True)
 
     class Meta:
         model = CustomUser
@@ -172,11 +103,11 @@ class CurrentUserSerializer(serializers.ModelSerializer):
             'id', 'email', 'first_name', 'last_name',
             'is_active', 'is_staff', 'is_superuser',
             'date_joined', 'last_login',
-            'user_profile', 'client_profile', 'doctor_profile'
+            'user_profile', 'client_profile'
         )
 
 
-# ------------------- Сериализаторы записей -------------------
+# ------------------- Записи -------------------
 class AppointmentSerializer(serializers.ModelSerializer):
     doctor = DoctorSerializer(read_only=True)
     service = ServiceSerializer(read_only=True)
@@ -185,7 +116,6 @@ class AppointmentSerializer(serializers.ModelSerializer):
         model = Appointment
         fields = ['id', 'doctor', 'service', 'start_time', 'end_time', 'status', 'notes', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at', 'status']
-        ref_name = 'MainAppAppointmentSerializer'
 
 
 class AppointmentCreateSerializer(serializers.ModelSerializer):
@@ -195,7 +125,6 @@ class AppointmentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Appointment
         fields = ['doctor', 'service', 'start_time', 'end_time', 'notes']
-        ref_name = 'MainAppAppointmentCreateSerializer'
 
     def validate(self, data):
         if data['start_time'] >= data['end_time']:
@@ -211,7 +140,7 @@ class AppointmentCreateSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
-# ------------------- Сериализатор оплаты -------------------
+# ------------------- Оплата -------------------
 class PaymentSerializer(serializers.ModelSerializer):
     service = ServiceSerializer(read_only=True)
 
@@ -219,7 +148,6 @@ class PaymentSerializer(serializers.ModelSerializer):
         model = Payment
         fields = ['id', 'service', 'amount', 'payment_date', 'status', 'transaction_id', 'appointment']
         read_only_fields = ['id', 'payment_date', 'status', 'transaction_id', 'amount', 'appointment']
-        ref_name = 'MainAppPaymentSerializer'
 
 
 # ------------------- Email verification -------------------

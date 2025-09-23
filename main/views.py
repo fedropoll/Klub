@@ -1,32 +1,31 @@
 from rest_framework import generics, permissions, status
-from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
 from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import (
-    UserRegistrationSerializer,
-    UserProfileSerializer,
-    ClientProfileSerializer,
-    CurrentUserSerializer,
-    AppointmentSerializer,
-    PaymentSerializer,
-    AppointmentCreateSerializer,
-    ResendCodeSerializer,
-    VerifyEmailSerializer, RoleTokenObtainPairSerializer, AdminTokenObtainPairSerializer,
-    DirectorTokenObtainPairSerializer, DoctorTokenObtainPairSerializer, ClientTokenObtainPairSerializer,
-)
-from .models import CustomUser, ClientProfile, EmailVerificationCode, Appointment, Payment
+
 from listdoctors.models import Doctor
 from listdoctors.serializers import DoctorSerializer
+from .serializers import (
+    UserRegistrationSerializer,
+    CurrentUserSerializer,
+    AppointmentSerializer,
+    AppointmentCreateSerializer,
+    PaymentSerializer,
+    ResendCodeSerializer,
+    VerifyEmailSerializer,
+    AdminTokenObtainPairSerializer,
+    DirectorTokenObtainPairSerializer,
+    DoctorTokenObtainPairSerializer,
+    ClientTokenObtainPairSerializer, UserProfileSerializer, ClientProfileSerializer,
+)
+from .models import CustomUser, ClientProfile, EmailVerificationCode, Appointment, Payment
 from django.conf import settings
 from django.core.mail import send_mail
 import random
 from django.utils import timezone
+from rest_framework_simplejwt.views import TokenObtainPairView
 
-
+# ------------------- Регистрация -------------------
 class UserRegisterView(generics.CreateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserRegistrationSerializer
@@ -46,40 +45,26 @@ class UserRegisterView(generics.CreateAPIView):
             user=user,
             defaults={'code': code, 'is_used': False, 'created_at': timezone.now()}
         )
-        subject = 'Код подтверждения для вашего аккаунта'
-        message = f'Ваш код подтверждения: {code}'
-        email_from = settings.EMAIL_HOST_USER
-        recipient_list = [user.email]
-        send_mail(subject, message, email_from, recipient_list)
+        send_mail(
+            subject='Код подтверждения для вашего аккаунта',
+            message=f'Ваш код подтверждения: {code}',
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=[user.email]
+        )
 
 
-@swagger_auto_schema(
-    request_body=openapi.Schema(
-        type=openapi.TYPE_OBJECT,
-        required=['email', 'code'],
-        properties={
-            'email': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL,
-                                    description='Email пользователя'),
-            'code': openapi.Schema(type=openapi.TYPE_STRING, description='Код подтверждения из письма', min_length=6,
-                                   max_length=6),
-        }
-    ),
-    responses={
-        200: openapi.Response(description='Email успешно подтвержден!'),
-        400: openapi.Response(description='Неверный код или истек срок действия'),
-        404: openapi.Response(description='Пользователь не найден')
-    }
-)
-class VerifyEmailView(GenericAPIView):
-    permission_classes = [permissions.AllowAny]
+# ------------------- Email verification -------------------
+class VerifyEmailView(generics.GenericAPIView):
     serializer_class = VerifyEmailSerializer
+    permission_classes = [permissions.AllowAny]
     parser_classes = [JSONParser]
 
+    @swagger_auto_schema(request_body=VerifyEmailSerializer)
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data.get('email')
-        code = serializer.validated_data.get('code')
+        email = serializer.validated_data['email']
+        code = serializer.validated_data['code']
 
         try:
             user = CustomUser.objects.get(email=email)
@@ -102,20 +87,19 @@ class VerifyEmailView(GenericAPIView):
         except CustomUser.DoesNotExist:
             return Response({'detail': 'Пользователь не найден.'}, status=status.HTTP_404_NOT_FOUND)
         except EmailVerificationCode.DoesNotExist:
-            return Response({'detail': 'Неверный код подтверждения или пользователь.'},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Неверный код подтверждения или пользователь.'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ResendVerificationCodeView(GenericAPIView):
-    permission_classes = [permissions.AllowAny]
+class ResendVerificationCodeView(generics.GenericAPIView):
     serializer_class = ResendCodeSerializer
+    permission_classes = [permissions.AllowAny]
     parser_classes = [JSONParser]
 
     @swagger_auto_schema(request_body=ResendCodeSerializer)
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data.get('email')
+        email = serializer.validated_data['email']
 
         try:
             user = CustomUser.objects.get(email=email)
@@ -123,7 +107,6 @@ class ResendVerificationCodeView(GenericAPIView):
             return Response({'detail': 'Новый код подтверждения отправлен на ваш email.'}, status=status.HTTP_200_OK)
         except CustomUser.DoesNotExist:
             return Response({'detail': 'Пользователь не найден.'}, status=status.HTTP_404_NOT_FOUND)
-
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 
