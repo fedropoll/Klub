@@ -5,40 +5,40 @@ from dotenv import load_dotenv
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-# Если production, грузим .env.production
-if os.getenv("RAILWAY_ENVIRONMENT") == "production":
-    load_dotenv(BASE_DIR / ".env.production")
-else:
-    load_dotenv(BASE_DIR / ".env.local")
+
+# Загружаем переменные окружения
+load_dotenv(BASE_DIR / ".env")
 
 # Основные настройки
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key")
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
-# ALLOWED_HOSTS = ['safeclinic-production.up.railway.app', '127.0.0.1', 'localhost']
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
 
-PORT = os.environ.get('PORT', 8000)  # 8000 как fallback на локале
+# Тут добавляем твой сервер и локалку
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "62.72.33.230,srv615768.hstgr.cloud,localhost,127.0.0.1").split(",")
+
+# Порт (на проде обычно gunicorn+nginx, а не runserver)
+PORT = os.environ.get("PORT", 8000)
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://safeclinic-production.up.railway.app",
+    "https://62.72.33.230",
+    "https://srv615768.hstgr.cloud",
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-
 SECURE_SSL_REDIRECT = not DEBUG
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 
 USE_X_FORWARDED_HOST = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+# Подключение базы
 DATABASES = {
     "default": dj_database_url.parse(
-        os.getenv("DATABASE_URL") or "postgresql://postgres:DdVrKjpVhNwhyFHzfLSlvpCDEgyHosvO@hopper.proxy.rlwy.net:38396/railway"
+        os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/dbname")
     )
 }
-
 
 # JWT
 SIMPLE_JWT = {
@@ -84,7 +84,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-MIDDLEWARE = ['corsheaders.middleware.CorsMiddleware'] + MIDDLEWARE
 
 ROOT_URLCONF = "safe.urls"
 
@@ -115,25 +114,25 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
     ],
 }
 
-# Настройки Swagger
+# Swagger
 SWAGGER_SETTINGS = {
-    'SECURITY_DEFINITIONS': {
-        'Bearer': {
-            'type': 'apiKey',
-            'name': 'Authorization',
-            'in': 'header',
-            'description': "Введите токен в формате: Bearer <your_token>"
+    "SECURITY_DEFINITIONS": {
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": "Введите токен в формате: Bearer <your_token>",
         }
     },
-    'USE_SESSION_AUTH': False,
+    "USE_SESSION_AUTH": False,
 }
 
 # Пользовательская модель
