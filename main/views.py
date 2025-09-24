@@ -45,12 +45,20 @@ class UserRegisterView(generics.CreateAPIView):
             user=user,
             defaults={'code': code, 'is_used': False, 'created_at': timezone.now()}
         )
-        send_mail(
-            subject='Код подтверждения для вашего аккаунта',
-            message=f'Ваш код подтверждения: {code}',
-            from_email=settings.EMAIL_HOST_USER,
-            recipient_list=[user.email]
-        )
+
+        try:
+            send_mail(
+                subject='Код подтверждения для вашего аккаунта',
+                message=f'Ваш код подтверждения: {code}',
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[user.email],
+                fail_silently=False,  # можешь поставить True, если хочешь, чтобы оно просто молчало
+            )
+        except Exception as e:
+            # Логируем ошибку и выводим код в консоль
+            print(f"[DEBUG] Ошибка при отправке email: {e}")
+            print(f"[DEBUG] Код подтверждения для {user.email}: {code}")
+
 
 
 # ------------------- Email verification -------------------
