@@ -51,25 +51,20 @@ class ClientTokenObtainPairSerializer(RoleTokenObtainPairSerializer):
     allowed_role = 'patient'
 
 
-# ------------------- Регистрация пациента -------------------
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
-    password2 = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
 
     class Meta:
         model = CustomUser
-        fields = ('email', 'password', 'password2', 'first_name', 'last_name')
+        fields = ('email', 'password', 'first_name', 'last_name')
         extra_kwargs = {'email': {'required': True}}
 
     def validate(self, attrs):
-        if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError({"password": "Пароли не совпадают."})
         if CustomUser.objects.filter(email=attrs['email']).exists():
             raise serializers.ValidationError({"email": "Email уже зарегистрирован."})
         return attrs
 
     def create(self, validated_data):
-        validated_data.pop('password2')
         user = CustomUser.objects.create_user(**validated_data)
 
         # Создаём профили безопасно
@@ -77,6 +72,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         ClientProfile.objects.get_or_create(user=user)
 
         return user
+
 
 
 # ------------------- Профили -------------------
