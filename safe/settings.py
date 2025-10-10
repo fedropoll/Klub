@@ -4,43 +4,55 @@ from datetime import timedelta
 from dotenv import load_dotenv
 import dj_database_url
 
+# ----------------------------------------
+# Пути
+# ----------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Загружаем переменные окружения
+# Загружаем переменные окружения из .env (локально)
 load_dotenv(BASE_DIR / ".env")
 
+# ----------------------------------------
 # Основные настройки
+# ----------------------------------------
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key")
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
-# Тут добавляем твой сервер и локалку
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "62.72.33.230,srv615768.hstgr.cloud,localhost,127.0.0.1").split(",")
+# ALLOWED_HOSTS из переменных окружения (через запятую)
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
 
-# Порт (на проде обычно gunicorn+nginx, а не runserver)
-PORT = os.environ.get("PORT", 8000)
+# ----------------------------------------
+# Порт для продакшена
+# ----------------------------------------
+PORT = int(os.environ.get("PORT", 8000))
 
-CSRF_TRUSTED_ORIGINS = [
-    "https://62.72.33.230",
-    "https://srv615768.hstgr.cloud",
-]
+# Доверенные источники для CSRF
+CSRF_TRUSTED_ORIGINS = [f"https://{host.strip()}" for host in ALLOWED_HOSTS]
 
+# Разрешаем все источники для CORS (можно ограничить при желании)
 CORS_ALLOW_ALL_ORIGINS = True
 
+# ----------------------------------------
+# Безопасность
+# ----------------------------------------
 SECURE_SSL_REDIRECT = not DEBUG
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
-
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-# Подключение базы
+# ----------------------------------------
+# Подключение к базе данных
+# ----------------------------------------
 DATABASES = {
     "default": dj_database_url.parse(
-        os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/dbname")
+        os.getenv("DATABASE_URL")
     )
 }
 
+# ----------------------------------------
 # JWT
+# ----------------------------------------
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.getenv("ACCESS_TOKEN_LIFETIME", 60))),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.getenv("REFRESH_TOKEN_LIFETIME", 7))),
@@ -49,7 +61,9 @@ SIMPLE_JWT = {
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.RefreshToken",),
 }
 
+# ----------------------------------------
 # Приложения
+# ----------------------------------------
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -73,6 +87,9 @@ INSTALLED_APPS = [
     "data_analytics",
 ]
 
+# ----------------------------------------
+# Middleware
+# ----------------------------------------
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -85,6 +102,9 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+# ----------------------------------------
+# URLs и WSGI
+# ----------------------------------------
 ROOT_URLCONF = "safe.urls"
 
 TEMPLATES = [
@@ -105,7 +125,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "safe.wsgi.application"
 
+# ----------------------------------------
 # Статика и медиа
+# ----------------------------------------
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
@@ -113,6 +135,9 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# ----------------------------------------
+# REST Framework
+# ----------------------------------------
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -122,7 +147,9 @@ REST_FRAMEWORK = {
     ],
 }
 
+# ----------------------------------------
 # Swagger
+# ----------------------------------------
 SWAGGER_SETTINGS = {
     "SECURITY_DEFINITIONS": {
         "Bearer": {
@@ -135,6 +162,14 @@ SWAGGER_SETTINGS = {
     "USE_SESSION_AUTH": False,
 }
 
+# ----------------------------------------
 # Пользовательская модель
+# ----------------------------------------
 AUTH_USER_MODEL = "main.CustomUser"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ----------------------------------------
+# Email (если нужно)
+# ----------------------------------------
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
