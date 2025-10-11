@@ -31,7 +31,7 @@ urlpatterns = [
     path('list_patients/', include('listpatients.urls')),
     path('branches/', include('branch.urls')),
     path('appointments/', include('appointments.urls')),
-    path('main/', include('main.urls')),
+    path('', include('main.urls')),
 
     # Swagger UI
     path('swagger/', csrf_exempt(schema_view.with_ui('swagger', cache_timeout=0)), name='schema-swagger-ui'),

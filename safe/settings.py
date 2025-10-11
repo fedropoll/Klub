@@ -46,7 +46,7 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 # ----------------------------------------
 DATABASES = {
     "default": dj_database_url.parse(
-        os.getenv("DATABASE_URL")
+        os.getenv("DATABASE_URL") + "?sslmode=require"
     )
 }
 
